@@ -1,0 +1,44 @@
+https://github.com/bitcoin/bitcoin/issues/31293
+----------------------------------
+# setup required network interfaces for Mac
+
+% sudo ifconfig bridge1 create
+% sudo ifconfig bridge1 inet 1.1.1.1/24 up
+% sudo ifconfig bridge1 inet 2.2.2.2/24 alias
+
+# after test:
+sudo ifconfig bridge1 destroy
+----------------------------------
+# run test and keep the output folder for debugging purpose
+build/test/functional/test_runner.py --ihave1111and2222 build/test/functional/feature_bind_port_discover.py --tmpdir /tmp/ --nocleanup
+----------------------------------
+Findings and validation details are posted in https://github.com/bitcoin/bitcoin/issues/31293#issuecomment-2550345347
+
+build/test/functional/test_runner.py --ihave1111and2222 build/test/functional/feature_bind_port_discover.py --tmpdir /tmp/ --nocleanup
+
+The Discover() is invoked for 0.0.0.0:.
+
+The fix is in src/init.cpp:
+if (bind_addr.has_value()) {
+connOptions.bind_on_any |= bind_addr.value().IsBindAny();
+connOptions.vBinds.push_back(bind_addr.value());
+
+New functional test added in test/functional/feature_bind_port_discover.py:
+self.bind_to_localhost_only = False
+self.extra_args = [
+['-discover', f'-port={BIND_PORT}'], # bind on any
+['-discover', f'-bind={ADDR1}:{BIND_PORT}'],
+['-discover', f'-bind=0.0.0.0:{BIND_PORT+1}'],
+['-discover', f'-bind=[::]:{BIND_PORT+2}'],
+['-discover', f'-bind=::', f'-port={BIND_PORT+3}'],
+['-discover', f'-bind=0.0.0.0:{BIND_PORT+4}=onion'],
+
+The log trace (/tmp/test_runner_₿_🏃_20241217_234536/feature_bind_port_discover_0/test_framework.log):
+2024-12-18T04:45:38.268000Z TestFramework (INFO): Test that if -bind= is not passed then all addresses are added to localaddresses
+2024-12-18T04:45:38.268000Z TestFramework (INFO): Test that if -bind= is passed then only that address is added to localaddresses
+2024-12-18T04:45:38.269000Z TestFramework (INFO): Test that if -bind=0.0.0.0:port is passed then all addresses are added to localaddresses
+2024-12-18T04:45:38.269000Z TestFramework (INFO): Test that if -bind=[::]:port is passed then all addresses are added to localaddresses
+2024-12-18T04:45:38.270000Z TestFramework (INFO): Test that if -bind=:: is passed then all addresses are added to localaddresses
+2024-12-18T04:45:38.270000Z TestFramework (INFO): Test that if -bind=0.0.0.0:port=onion is passed then all addresses are added to localaddresses
+
+So, #31492 looks like a fix candidate to this issue to me.

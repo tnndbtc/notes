@@ -1,0 +1,37 @@
+----------------------------------
+Install gperftools for its libraries and header files
+
+% brew install gperftools
+----------------------------------
+For Apple M1, Sequoia 15.1.1, there is an issue with default 'pprof' comes with gperftools, as discussed in https://github.com/gperftools/gperftools/issues/1292
+The workaround for now is to install a different version of 'pprof'
+% go install github.com/google/pprof@latest
+
+Make sure to add ~/go/bin/ at beginning of $PATH so the default one will not be used.
+----------------------------------
+Link -lprofiler to bitcoind executable
+In bitcoin/src/Makefile, add -lprofiler for bitcoind_LINK:
+
+bitcoind_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
+        $(LIBTOOLFLAGS) --mode=link $(CXXLD) $(bitcoind_CXXFLAGS) \
+        $(CXXFLAGS) $(bitcoind_LDFLAGS) $(LDFLAGS) -lprofiler -o $@
+
+However, if you run:
+otool -L src/bitcoind, it still doesn't show it's linking with /opt/homebrew/opt/gperftools/lib/libprofiler.0.dylib.  The root cause is that we have used tag -dead_strip_dylibs which will strip it off.  So, hack bitcoin/src/Makefile again and remove -Wl,-dead_strip_dylibs from CORE_LDFLAGS so that it will link with profiler
+CORE_LDFLAGS =  -Wl,-headerpad_max_install_names -Wl,-dead_strip -Wl,-dead_strip_dylibs
+becomes:
+CORE_LDFLAGS =  -Wl,-headerpad_max_install_names -Wl,-dead_strip
+
+use V=1 to see the detailed linking flags
+% make V=1
+% otool -L src/bitcoind
+src/bitcoind:
+	/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1351.0.0)
+	/opt/homebrew/opt/gperftools/lib/libprofiler.0.dylib (compatibility version 6.0.0, current version 6.13.0)
+	/opt/homebrew/opt/berkeley-db@4/lib/libdb_cxx-4.8.dylib (compatibility version 0.0.0, current version 0.0.0)
+	/opt/homebrew/opt/libevent/lib/libevent_pthreads-2.1.7.dylib (compatibility version 8.0.0, current version 8.1.0)
+	/opt/homebrew/opt/libevent/lib/libevent-2.1.7.dylib (compatibility version 8.0.0, current version 8.1.0)
+	/usr/lib/libsqlite3.dylib (compatibility version 9.0.0, current version 357.0.0)
+	/usr/lib/libc++.1.dylib (compatibility version 1.0.0, current version 1800.101.0)
+	/opt/homebrew/opt/llvm@16/lib/libunwind.1.dylib (compatibility version 1.0.0, current version 1.0.0)
+

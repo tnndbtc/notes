@@ -1,0 +1,50 @@
+This is for Apple M1 chip, Sequoia 15.1.1 (arm64)
+
+----------------------------------
+llvm:
+It's not that we can install any LLVM, but we need to install the right version of llvm that works for the version of /usr/bin/ld:
+
+% ld -v
+@(#)PROGRAM:ld PROJECT:ld-1115.7.3
+BUILD 23:52:02 Dec  5 2024
+configured to support archs: armv6 armv7 armv7s arm64 arm64e arm64_32 i386 x86_64 x86_64h armv6m armv7k armv7m armv7em
+will use ld-classic for: armv6 armv7 armv7s i386 armv6m armv7k armv7m armv7em
+LTO support using: LLVM version 16.0.0 (static support for 29, runtime is 29)
+TAPI support using: Apple TAPI version 16.0.0 (tapi-1600.0.11.9)
+
+So, we need to install llvm 16.0.0.
+
+% brew install llvm@16
+
+then add following 3 environment variables:
+export PATH=/opt/homebrew/opt/llvm@16/bin:$PATH
+export LDFLAGS="-L/opt/homebrew/opt/llvm@16/lib"
+export CPPFLAGS="-I/opt/homebrew/opt/llvm@16/include"
+
+----------------------------------
+Build:
+https://github.com/bitcoin/bitcoin has changed to use cmake to build recently, so, we need to cover the build process for both Makefile and cmake:
+
+1) Makefile (old versions):
+% ./autogen.sh
+% ./configure --with-gui=no CXX=clang++
+% make
+
+2) cmake (newer versions):
+% cmake -B build -DENABLE_WALLET=ON -DCMAKE_CXX_COMPILER=/opt/homebrew/opt/llvm@16/bin/clang++ -DCMAKE_C_COMPILER=/opt/homebrew/opt/llvm@16/bin/clang
+
+% cmake --build build
+% ctest --test-dir build
+
+3) cmake to build fuzzer
+% cmake --preset=libfuzzer \
+  -DCMAKE_C_COMPILER="$(brew --prefix llvm)@16/bin/clang" \
+  -DCMAKE_CXX_COMPILER="$(brew --prefix llvm)@16/bin/clang++" \
+  -DAPPEND_LDFLAGS=-Wl,-no_warn_duplicate_libraries
+% cmake --build build_fuzz
+
+----------------------------------
+To add remote forked repo so you can cherry-pick changes from other peoples pull request:
+% git remote add andremralves https://github.com/andremralves/bitcoin
+% git fetch andremralves
+----------------------------------

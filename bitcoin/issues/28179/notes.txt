@@ -1,0 +1,63 @@
+----------------------------------
+https://github.com/bitcoin/bitcoin/issues/28179
+----------------------------------
+----------------------------------
+https://github.com/bitcoin/bitcoin/pull/28212
+commit 387c12e0813a863bc9728777719acbafe7b12a34 has the test changes in PR: 28212.  The performance degradation starts in commit 4f473ea515bc77b9138323dab8a741c063d32e8f (or PR: https://github.com/bitcoin/bitcoin/pull/27255)
+src/script/sign.cpp
+src/script/miniscript.h
+
+The major change about performance is in: SignTaprootScript
+Use following instead of original one:
+const auto ms = miniscript::FromScript(script, ms_satisfier);
+
+git checkout 4f473ea515bc77b9138323dab8a741c063d32e8f
+git checkout HEAD~1
+or
+git checkout febe2abc0e
+git cherry-pick 387c12e0813a863bc9728777719acbafe7b12a34
+
+# to undo the cherry-pick
+git reset HEAD~1
+git checkout -- test/functional/wallet_taproot.py
+
+to test:
+test/functional/test_runner.py test/functional/wallet_taproot.py --tmpdir /tmp/ --nocleanup
+----------------------------------
+Laptop:
+Chip: Apple M1
+OS: Sequoia 15.1.1
+CPUs: 8 cores
+RAM: 16 GB
+----------------------------------
+prof file results notes:
+old_febe2abc0e.prof: profile result from commit febe2abc0e, before performance degradation.  This runs 7 seconds
+
+new_4f473ea515.prof: profile result from commit 4f473ea515bc77b9138323dab8a741c063d32e8f, or PR: https://github.com/bitcoin/bitcoin/pull/27255.  This runs 11 seconds, already a performance degradation
+
+4f473ea515_387c12e081_1_100.prof: profile result from commit 4f473ea515bc77b9138323dab8a741c063d32e8f + cherry pick 387c12e0813a863bc9728777719acbafe7b12a34, self.do_test_k_of_n(1, 100)
+
+4f473ea515_387c12e081_1_500.prof: profile result from commit 4f473ea515bc77b9138323dab8a741c063d32e8f + cherry pick 387c12e0813a863bc9728777719acbafe7b12a34, self.do_test_k_of_n(1, 500)
+
+----------------------------------
+Profiling results:
+modify test/functional/wallet_taproot.py
+        # Test 999-of-999
+        # self.do_test_k_of_n(999, 999)
+        # 1,100 to 1,300 -> major increase is miniscript::Node::ProduceInput() const::{lambda(miniscript::Node const&, Span)#2}::operator()
+        # self.do_test_k_of_n(1, 100) # total run: 15s operator(): 1.74s
+        # self.do_test_k_of_n(1, 200) # total run: 19s operator(): 2.24s
+        # self.do_test_k_of_n(1, 300) # total run: 26s operator(): 4.33s
+        # self.do_test_k_of_n(1, 400) # total run: 38s operator(): 8.97s
+        # self.do_test_k_of_n(1, 500) # total run: 60s operator(): 19.42s
+        # self.do_test_k_of_n(1, 600) # total run: 90s operator(): 34.70s
+        # self.do_test_k_of_n(1, 700) # total run: 130s operator(): 49.92s
+        # self.do_test_k_of_n(1, 800) # total run: 187s operator(): 77.68s
+        # self.do_test_k_of_n(1, 900) # total run: 274s operator(): 123.31s
+        # self.do_test_k_of_n(1, 999) # total run: 348s operator(): 156.10s
+    
+        # (1,100) to (50,100) no change
+        # self.do_test_k_of_n(10, 100) # 14s
+        # self.do_test_k_of_n(50, 100) # 14s
+        # self.do_test_k_of_n(1, 300) # 26s operator(): 4.33s
+        # self.do_test_k_of_n(300, 300) # 28s operator():
