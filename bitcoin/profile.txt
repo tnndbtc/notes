@@ -35,3 +35,8 @@ src/bitcoind:
 	/usr/lib/libc++.1.dylib (compatibility version 1.0.0, current version 1800.101.0)
 	/opt/homebrew/opt/llvm@16/lib/libunwind.1.dylib (compatibility version 1.0.0, current version 1.0.0)
 
+----------------------------------
+If running function test, because profiler will spit out some messages, so needs to comment an assertion in
+test/functional/test_framework/test_node.py
++        # if stderr != expected_stderr:
++        #    raise AssertionError("Unexpected stderr {} != {}".format(stderr, expected_stderr))

@@ -29,11 +29,16 @@ https://github.com/bitcoin/bitcoin has changed to use cmake to build recently, s
 % ./autogen.sh
 % ./configure --with-gui=no CXX=clang++
 % make
+or
+% make -j 8 # if there are 8 CPUs
 
 2) cmake (newer versions):
 % cmake -B build -DENABLE_WALLET=ON -DCMAKE_CXX_COMPILER=/opt/homebrew/opt/llvm@16/bin/clang++ -DCMAKE_C_COMPILER=/opt/homebrew/opt/llvm@16/bin/clang
 
 % cmake --build build
+or 
+% cmake --build build -j 8 # if there are 8 CPUs
+
 % ctest --test-dir build
 
 3) cmake to build fuzzer
