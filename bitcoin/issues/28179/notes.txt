@@ -7,9 +7,12 @@ commit 387c12e0813a863bc9728777719acbafe7b12a34 has the test changes in PR: 2821
 src/script/sign.cpp
 src/script/miniscript.h
 
-The major change about performance is in: SignTaprootScript
-Use following instead of original one:
-const auto ms = miniscript::FromScript(script, ms_satisfier);
+SignTaprootScript?
+The major change about performance is in: ProduceSignature
+        if (!solved && result.empty()) {
+            WshSatisfier ms_satisfier{provider, sigdata, creator, witnessscript};
+            const auto ms = miniscript::FromScript(witnessscript, ms_satisfier);
+            solved = ms && ms->Satisfy(ms_satisfier, result) == miniscript::Availability::YES;
 
 git checkout 4f473ea515bc77b9138323dab8a741c063d32e8f
 git checkout HEAD~1
@@ -30,14 +33,25 @@ OS: Sequoia 15.1.1
 CPUs: 8 cores
 RAM: 16 GB
 ----------------------------------
+pprof -text name.prof
+pprof -web name.prof
+pprof -kcachegrind name.prof
+pprof -callgrind name.prof
+----------------------------------
 prof file results notes:
 old_febe2abc0e.prof: profile result from commit febe2abc0e, before performance degradation.  This runs 7 seconds
 
-new_4f473ea515.prof: profile result from commit 4f473ea515bc77b9138323dab8a741c063d32e8f, or PR: https://github.com/bitcoin/bitcoin/pull/27255.  This runs 11 seconds, already a performance degradation
+4f473ea515_no_387c12e081.prof: profile result from commit 4f473ea515bc77b9138323dab8a741c063d32e8f without 387c12e081, or PR: https://github.com/bitcoin/bitcoin/pull/27255.  This runs 11 seconds, already a performance degradation
 
 4f473ea515_387c12e081_1_100.prof: profile result from commit 4f473ea515bc77b9138323dab8a741c063d32e8f + cherry pick 387c12e0813a863bc9728777719acbafe7b12a34, self.do_test_k_of_n(1, 100)
 
 4f473ea515_387c12e081_1_500.prof: profile result from commit 4f473ea515bc77b9138323dab8a741c063d32e8f + cherry pick 387c12e0813a863bc9728777719acbafe7b12a34, self.do_test_k_of_n(1, 500)
+
+4f473ea515_387c12e081_1_700.prof: profile result from commit 4f473ea515bc77b9138323dab8a741c063d32e8f + cherry pick 387c12e0813a863bc9728777719acbafe7b12a34, self.do_test_k_of_n(1, 700)
+
+old_febe2abc0e_387c12e081_1_100.prof: profile result from commit febe2abc0e + cherry pick 387c12e0813a863bc9728777719acbafe7b12a34, self.do_test_k_of_n(1, 100)
+
+old_febe2abc0e_387c12e081_1_700.prof: profile result from commit febe2abc0e + cherry pick 387c12e0813a863bc9728777719acbafe7b12a34, self.do_test_k_of_n(1, 700)
 
 ----------------------------------
 Profiling results:
