@@ -1,6 +1,31 @@
 ----------------------------------
+(lldb) b src/script/miniscript.h:1193
+after breakpoint is hit
+(lldb) breakpoint modify --condition "sat.size > 0"
+----------------------------------
+callstack:
+src/script/sign.cpp: SignTaprootScript
+src/script/sign.cpp: SignTap
+src/script/sign.cpp: ProduceSignature
+src/script/sign.cpp: Sign?
+----------------------------------
+For comment: The new algorithm uses the best (smallest) set of k signatures.
+The implementation is here:
+src/script/miniscript.cpp
+InputStack operator|(InputStack a, InputStack b) {
+...
+...
+...
+    // YESes, and the bigger ones between MAYBEs. Prefer YES over MAYBE.
+    if (a.available == Availability::YES && b.available == Availability::YES) {
+        return std::move(a.size <= b.size ? a : b);
+...
+...
+...
+----------------------------------
 https://github.com/bitcoin/bitcoin/issues/28179
 ----------------------------------
+To show correct call stack without inline opitmization for static functions, change -O2 to -O0 (CXXFLAGS, OBJCXXFLAGS, CFLAGS), and add -g 
 ----------------------------------
 https://github.com/bitcoin/bitcoin/pull/28212
 commit 387c12e0813a863bc9728777719acbafe7b12a34 has the test changes in PR: 28212.  The performance degradation starts in commit 4f473ea515bc77b9138323dab8a741c063d32e8f (or PR: https://github.com/bitcoin/bitcoin/pull/27255)
@@ -37,6 +62,8 @@ pprof -text name.prof
 pprof -web name.prof
 pprof -kcachegrind name.prof
 pprof -callgrind name.prof
+
+qcachegrind name.out
 ----------------------------------
 prof file results notes:
 old_febe2abc0e.prof: profile result from commit febe2abc0e, before performance degradation.  This runs 7 seconds
@@ -60,15 +87,19 @@ modify test/functional/wallet_taproot.py
         # self.do_test_k_of_n(999, 999)
         # 1,100 to 1,300 -> major increase is miniscript::Node::ProduceInput() const::{lambda(miniscript::Node const&, Span)#2}::operator()
         # self.do_test_k_of_n(1, 100) # total run: 15s operator(): 1.74s
+            # self.do_test_k_of_n(1, 100) # base: febe2abc0e total run: 12s
         # self.do_test_k_of_n(1, 200) # total run: 19s operator(): 2.24s
         # self.do_test_k_of_n(1, 300) # total run: 26s operator(): 4.33s
         # self.do_test_k_of_n(1, 400) # total run: 38s operator(): 8.97s
         # self.do_test_k_of_n(1, 500) # total run: 60s operator(): 19.42s
         # self.do_test_k_of_n(1, 600) # total run: 90s operator(): 34.70s
         # self.do_test_k_of_n(1, 700) # total run: 130s operator(): 49.92s
+            # self.do_test_k_of_n(1, 700) # base: febe2abc0e total run: 29s
         # self.do_test_k_of_n(1, 800) # total run: 187s operator(): 77.68s
         # self.do_test_k_of_n(1, 900) # total run: 274s operator(): 123.31s
         # self.do_test_k_of_n(1, 999) # total run: 348s operator(): 156.10s
+        # self.do_test_k_of_n(999, 999) # total run: timeout
+            # self.do_test_k_of_n(999, 999) # base: febe2abc0e total run: 40s
     
         # (1,100) to (50,100) no change
         # self.do_test_k_of_n(10, 100) # 14s
