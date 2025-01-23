@@ -1,4 +1,56 @@
 ----------------------------------
+https://github.com/bitcoin/bitcoin/pull/31719
+----------------------------------
+build/src/test/test_bitcoin --run_test=descriptor_tests
+build/src/test/test_bitcoin --run_test=miniscript_tests
+----------------------------------
+to test:
+% git remote add eriknylund https://github.com/eriknylund/bitcoin.git
+% git fetch eriknylund
+% git cherry-pick 387c12e0813a863bc9728777719acbafe7b12a34
+
+#before fix: timed out
+
+# after fix: 36 seconds
+
+% build/test/functional/test_runner.py test/functional/wallet_taproot.py --tmpdir /tmp
+Temporary test directory at /tmp/test_runner_₿_🏃_20250122_183137
+Remaining jobs: [wallet_taproot.py --descriptors]
+1/1 - wallet_taproot.py --descriptors passed, Duration: 36 s            
+
+TEST                            | STATUS    | DURATION
+
+wallet_taproot.py --descriptors | ✓ Passed  | 36 s
+
+ALL                             | ✓ Passed  | 36 s (accumulated) 
+Runtime: 36 s
+----------------------------------
+before fix
+% build/test/functional/test_runner.py test/functional/wallet_taproot.py --tmpdir /tmp
+Temporary test directory at /tmp/test_runner_₿_🏃_20250121_143627
+Remaining jobs: [wallet_taproot.py --descriptors]
+1/1 - wallet_taproot.py --descriptors passed, Duration: 10 s
+
+TEST                            | STATUS    | DURATION
+
+wallet_taproot.py --descriptors | ✓ Passed  | 10 s
+
+ALL                             | ✓ Passed  | 10 s (accumulated)
+Runtime: 10 s
+-------------------------------
+after fix:
+% build/test/functional/test_runner.py test/functional/wallet_taproot.py --tmpdir /tmp
+Temporary test directory at /tmp/test_runner_₿_🏃_20250121_144816
+Remaining jobs: [wallet_taproot.py --descriptors]
+1/1 - wallet_taproot.py --descriptors passed, Duration: 7 s
+
+TEST                            | STATUS    | DURATION
+
+wallet_taproot.py --descriptors | ✓ Passed  | 7 s
+
+ALL                             | ✓ Passed  | 7 s (accumulated)
+Runtime: 7 s
+----------------------------------
 (lldb) b src/script/miniscript.h:1193
 after breakpoint is hit
 (lldb) breakpoint modify --condition "sat.size > 0"
@@ -7,7 +59,6 @@ callstack:
 src/script/sign.cpp: SignTaprootScript
 src/script/sign.cpp: SignTap
 src/script/sign.cpp: ProduceSignature
-src/script/sign.cpp: Sign?
 ----------------------------------
 For comment: The new algorithm uses the best (smallest) set of k signatures.
 The implementation is here:
@@ -31,13 +82,6 @@ https://github.com/bitcoin/bitcoin/pull/28212
 commit 387c12e0813a863bc9728777719acbafe7b12a34 has the test changes in PR: 28212.  The performance degradation starts in commit 4f473ea515bc77b9138323dab8a741c063d32e8f (or PR: https://github.com/bitcoin/bitcoin/pull/27255)
 src/script/sign.cpp
 src/script/miniscript.h
-
-SignTaprootScript?
-The major change about performance is in: ProduceSignature
-        if (!solved && result.empty()) {
-            WshSatisfier ms_satisfier{provider, sigdata, creator, witnessscript};
-            const auto ms = miniscript::FromScript(witnessscript, ms_satisfier);
-            solved = ms && ms->Satisfy(ms_satisfier, result) == miniscript::Availability::YES;
 
 git checkout 4f473ea515bc77b9138323dab8a741c063d32e8f
 git checkout HEAD~1
