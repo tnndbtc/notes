@@ -1,6 +1,11 @@
 ----------------------------------
 https://github.com/bitcoin/bitcoin/pull/31719
 ----------------------------------
+Instruction on how to build on Mac Apple M1 chipset on Sequoia 15.1.1
+https://github.com/tnndbtc/notes/blob/main/bitcoin/build.txt
+Instruction on how to profile on Mac Apple M1 chipset on Sequoia 15.1.1
+https://github.com/tnndbtc/notes/blob/main/bitcoin/profile.txt
+----------------------------------
 build/src/test/test_bitcoin --run_test=descriptor_tests
 build/src/test/test_bitcoin --run_test=miniscript_tests
 ----------------------------------
