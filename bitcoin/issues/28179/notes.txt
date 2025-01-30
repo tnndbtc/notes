@@ -3,6 +3,8 @@ https://github.com/bitcoin/bitcoin/pull/31719
 
 More notes on how to build/profile/run ci on Apple M1 chipset can be found at: 
 https://github.com/tnndbtc/notes/tree/main/bitcoin
+
+This one also shares the same fix for: https://github.com/bitcoin/bitcoin/issues/29098
 ----------------------------------
 Instruction on how to build on Mac Apple M1 chipset on Sequoia 15.1.1
 https://github.com/tnndbtc/notes/blob/main/bitcoin/build.txt
