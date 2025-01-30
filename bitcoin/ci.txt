@@ -1,0 +1,29 @@
+To run CI on Apple M1 Sequoia 15.1.1:
+----------------
+Download docker:
+
+https://docs.docker.com/desktop/setup/install/mac-install/
+----------------
+Fix ci/test/02_run_container.sh
+replace "tee --append" by "tee -a"
+
+docker run --platform="${CI_IMAGE_PLATFORM}" --rm "${CI_IMAGE_NAME_TAG}" bash -c "env | grep --extended-regexp '^(HOME|PATH|USER)='" | tee -a "/tmp/env-$USER-$CONTAINER_NAME"
+----------------
+Run ci fuzz test:
+env -i HOME="$HOME" PATH="$PATH" USER="$USER" bash -c 'MAKEJOBS="-j8" FILE_ENV="./ci/test/00_setup_env_native_fuzz.sh" ./ci/test_run_all.sh'
+----------------
+to keep container after docker test is done, remove "--rm" in "docker run ..."
+vi ci/test/02_run_container.sh
+
+docker run --platform="${CI_IMAGE_PLATFORM}" --rm "${CI_IMAGE_NAME_TAG}" bash -c "env | grep --extended-regexp '^(HOME|PATH|USER)='" | tee -a "/tmp/env-$USER-$CONTAINER_NAME"
+----------------
+To build binaries with debug symbols in docker
+in ci/test/03_test_script.sh:
+BITCOIN_CONFIG_ALL="-DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DCMAKE_BUILD_TYPE=Debug"
+----------------
+to install lldb on Ubuntu (docker image for ci/test/00_setup_env_native_fuzz.sh):
+# apt install lldb
+----------------
+docker exec -it ci_native_fuzz sh
+docker stop ci_native_fuzz
+docker rmi <image id>

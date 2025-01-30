@@ -1,5 +1,8 @@
 ----------------------------------
 https://github.com/bitcoin/bitcoin/pull/31719
+
+More notes on how to build/profile/run ci on Apple M1 chipset can be found at: 
+https://github.com/tnndbtc/notes/tree/main/bitcoin
 ----------------------------------
 Instruction on how to build on Mac Apple M1 chipset on Sequoia 15.1.1
 https://github.com/tnndbtc/notes/blob/main/bitcoin/build.txt
@@ -155,3 +158,118 @@ modify test/functional/wallet_taproot.py
         # self.do_test_k_of_n(50, 100) # 14s
         # self.do_test_k_of_n(1, 300) # 26s operator(): 4.33s
         # self.do_test_k_of_n(300, 300) # 28s operator():
+----------------------------------
+Redirect stdout to a file (>out), and then redirect stderr to stdout (2>&1):
+command >out 2>&1
+----------------------------------
+# ./test_runner.py -j8 -l DEBUG /ci_container_base/ci/scratch/qa-assets/fuzz_corpora/ miniscript_smart --empty_min_time=60
+...
+...
+Run miniscript_smart with args ['/ci_container_base/ci/scratch/build-aarch64-unknown-linux-gnu/src/test/fuzz/fuzz', '-runs=1', PosixPath('/ci_container_base/ci/scratch/qa-assets/fuzz_corpora/miniscript_smart')]INFO: Running with entropic power schedule (0xFF, 100).
+INFO: Seed: 3106261954
+INFO: Loaded 1 modules   (627269 inline 8-bit counters): 627269 [0xaaaae915eb88, 0xaaaae91f7dcd), 
+INFO: Loaded 1 PC tables (627269 PCs): 627269 [0xaaaae91f7dd0,0xaaaae9b8a220), 
+INFO:     2089 files found in /ci_container_base/ci/scratch/qa-assets/fuzz_corpora/miniscript_smart
+INFO: -max_len is not provided; libFuzzer will not generate inputs larger than 181882 bytes
+INFO: seed corpus: files: 2089 min: 1b max: 181882b total: 445592b rss: 113Mb
+fuzz: test/fuzz/miniscript.cpp:1187: void (anonymous namespace)::TestNode(const MsCtx, const NodeRef &, FuzzedDataProvider &): Assertion `res || serror == ScriptError::SCRIPT_ERR_OP_COUNT || serror == ScriptError::SCRIPT_ERR_STACK_SIZE' failed.
+==7777== ERROR: libFuzzer: deadly signal
+/usr/bin/llvm-symbolizer-19: error: 'linux-vdso.so.1': No such file or directory
+    #0 0xaaaae5922988 in __sanitizer_print_stack_trace (/ci_container_base/ci/scratch/build-aarch64-unknown-linux-gnu/src/test/fuzz/fuzz+0x1da2988) (BuildId: 2aeae21417e87b58c23f49c8227e347304d53d6f)
+    #1 0xaaaae5873880 in fuzzer::PrintStackTrace() (/ci_container_base/ci/scratch/build-aarch64-unknown-linux-gnu/src/test/fuzz/fuzz+0x1cf3880) (BuildId: 2aeae21417e87b58c23f49c8227e347304d53d6f)
+    #2 0xaaaae5859630 in fuzzer::Fuzzer::CrashCallback() (/ci_container_base/ci/scratch/build-aarch64-unknown-linux-gnu/src/test/fuzz/fuzz+0x1cd9630) (BuildId: 2aeae21417e87b58c23f49c8227e347304d53d6f)
+    #3 0xffffaed3d79c  (linux-vdso.so.1+0x79c) (BuildId: 611870d34ca7b0f7f70efb81ab546d1b3826218d)
+    #4 0xffffae507624  (/lib/aarch64-linux-gnu/libc.so.6+0x87624) (BuildId: 32fa4d6f3a8d5f430bdb7af2eb779470cd5ec7c2)
+    #5 0xffffae4bcb38 in raise (/lib/aarch64-linux-gnu/libc.so.6+0x3cb38) (BuildId: 32fa4d6f3a8d5f430bdb7af2eb779470cd5ec7c2)
+    #6 0xffffae4a7dfc in abort (/lib/aarch64-linux-gnu/libc.so.6+0x27dfc) (BuildId: 32fa4d6f3a8d5f430bdb7af2eb779470cd5ec7c2)
+    #7 0xffffae4b5cb8  (/lib/aarch64-linux-gnu/libc.so.6+0x35cb8) (BuildId: 32fa4d6f3a8d5f430bdb7af2eb779470cd5ec7c2)
+    #8 0xffffae4b5d28 in __assert_fail (/lib/aarch64-linux-gnu/libc.so.6+0x35d28) (BuildId: 32fa4d6f3a8d5f430bdb7af2eb779470cd5ec7c2)
+    #9 0xaaaae5d4ce38 in (anonymous namespace)::TestNode(miniscript::MiniscriptContext, std::shared_ptr<miniscript::Node<CPubKey> const> const&, FuzzedDataProvider&) /ci_container_base/ci/scratch/build-aarch64-unknown-linux-gnu/src/test/fuzz/./test/fuzz/miniscript.cpp:1187:9
+    #10 0xaaaae5d55768 in miniscript_smart_fuzz_target(std::span<unsigned char const, 18446744073709551615ul>) /ci_container_base/ci/scratch/build-aarch64-unknown-linux-gnu/src/test/fuzz/./test/fuzz/miniscript.cpp:1279:5
+    #11 0xaaaae626ba9c in std::function<void (std::span<unsigned char const, 18446744073709551615ul>)>::operator()(std::span<unsigned char const, 18446744073709551615ul>) const /usr/lib/gcc/aarch64-linux-gnu/13/../../../../include/c++/13/bits/std_function.h:591:9
+    #12 0xaaaae626ba9c in test_one_input(std::span<unsigned char const, 18446744073709551615ul>) /ci_container_base/ci/scratch/build-aarch64-unknown-linux-gnu/src/test/fuzz/util/./test/fuzz/fuzz.cpp:85:5
+    #13 0xaaaae626b7e0 in LLVMFuzzerTestOneInput /ci_container_base/ci/scratch/build-aarch64-unknown-linux-gnu/src/test/fuzz/util/./test/fuzz/fuzz.cpp:223:5
+    #14 0xaaaae585abe8 in fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long) (/ci_container_base/ci/scratch/build-aarch64-unknown-linux-gnu/src/test/fuzz/fuzz+0x1cdabe8) (BuildId: 2aeae21417e87b58c23f49c8227e347304d53d6f)
+    #15 0xaaaae585a290 in fuzzer::Fuzzer::RunOne(unsigned char const*, unsigned long, bool, fuzzer::InputInfo*, bool, bool*) (/ci_container_base/ci/scratch/build-aarch64-unknown-linux-gnu/src/test/fuzz/fuzz+0x1cda290) (BuildId: 2aeae21417e87b58c23f49c8227e347304d53d6f)
+    #16 0xaaaae585c130 in fuzzer::Fuzzer::ReadAndExecuteSeedCorpora(std::vector<fuzzer::SizedFile, std::allocator<fuzzer::SizedFile>>&) (/ci_container_base/ci/scratch/build-aarch64-unknown-linux-gnu/src/test/fuzz/fuzz+0x1cdc130) (BuildId: 2aeae21417e87b58c23f49c8227e347304d53d6f)
+    #17 0xaaaae585c698 in fuzzer::Fuzzer::Loop(std::vector<fuzzer::SizedFile, std::allocator<fuzzer::SizedFile>>&) (/ci_container_base/ci/scratch/build-aarch64-unknown-linux-gnu/src/test/fuzz/fuzz+0x1cdc698) (BuildId: 2aeae21417e87b58c23f49c8227e347304d53d6f)
+    #18 0xaaaae5849cb4 in fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned long)) (/ci_container_base/ci/scratch/build-aarch64-unknown-linux-gnu/src/test/fuzz/fuzz+0x1cc9cb4) (BuildId: 2aeae21417e87b58c23f49c8227e347304d53d6f)
+    #19 0xaaaae58743b0 in main (/ci_container_base/ci/scratch/build-aarch64-unknown-linux-gnu/src/test/fuzz/fuzz+0x1cf43b0) (BuildId: 2aeae21417e87b58c23f49c8227e347304d53d6f)
+    #20 0xffffae4a84c0  (/lib/aarch64-linux-gnu/libc.so.6+0x284c0) (BuildId: 32fa4d6f3a8d5f430bdb7af2eb779470cd5ec7c2)
+    #21 0xffffae4a8594 in __libc_start_main (/lib/aarch64-linux-gnu/libc.so.6+0x28594) (BuildId: 32fa4d6f3a8d5f430bdb7af2eb779470cd5ec7c2)
+    #22 0xaaaae583f6ac in _start (/ci_container_base/ci/scratch/build-aarch64-unknown-linux-gnu/src/test/fuzz/fuzz+0x1cbf6ac) (BuildId: 2aeae21417e87b58c23f49c8227e347304d53d6f)
+
+NOTE: libFuzzer has rudimentary signal handlers.
+      Combine libFuzzer with AddressSanitizer or similar for better crash reports.
+SUMMARY: libFuzzer: deadly signal
+MS: 0 ; base unit: 0000000000000000000000000000000000000000
+0x24,0x1,0x0,0x5,0x30,0x6b,0x26,0xf6,0xc0,0x8f,0x94,0xd9,
+$\001\000\0050k&\366\300\217\224\331
+artifact_prefix='./'; Test unit written to ./crash-c551bf4c0924abd717620b708b22adda9fb351ee
+Base64: JAEABTBrJvbAj5TZ
+
+INFO: Running with entropic power schedule (0xFF, 100).
+INFO: Seed: 3106261954
+INFO: Loaded 1 modules   (627269 inline 8-bit counters): 627269 [0xaaaae915eb88, 0xaaaae91f7dcd), 
+INFO: Loaded 1 PC tables (627269 PCs): 627269 [0xaaaae91f7dd0,0xaaaae9b8a220), 
+INFO:     2089 files found in /ci_container_base/ci/scratch/qa-assets/fuzz_corpora/miniscript_smart
+INFO: -max_len is not provided; libFuzzer will not generate inputs larger than 181882 bytes
+INFO: seed corpus: files: 2089 min: 1b max: 181882b total: 445592b rss: 113Mb
+fuzz: test/fuzz/miniscript.cpp:1187: void (anonymous namespace)::TestNode(const MsCtx, const NodeRef &, FuzzedDataProvider &): Assertion `res || serror == ScriptError::SCRIPT_ERR_OP_COUNT || serror == ScriptError::SCRIPT_ERR_STACK_SIZE' failed.
+==7777== ERROR: libFuzzer: deadly signal
+/usr/bin/llvm-symbolizer-19: error: 'linux-vdso.so.1': No such file or directory
+    #0 0xaaaae5922988 in __sanitizer_print_stack_trace (/ci_container_base/ci/scratch/build-aarch64-unknown-linux-gnu/src/test/fuzz/fuzz+0x1da2988) (BuildId: 2aeae21417e87b58c23f49c8227e347304d53d6f)
+    #1 0xaaaae5873880 in fuzzer::PrintStackTrace() (/ci_container_base/ci/scratch/build-aarch64-unknown-linux-gnu/src/test/fuzz/fuzz+0x1cf3880) (BuildId: 2aeae21417e87b58c23f49c8227e347304d53d6f)
+    #2 0xaaaae5859630 in fuzzer::Fuzzer::CrashCallback() (/ci_container_base/ci/scratch/build-aarch64-unknown-linux-gnu/src/test/fuzz/fuzz+0x1cd9630) (BuildId: 2aeae21417e87b58c23f49c8227e347304d53d6f)
+    #3 0xffffaed3d79c  (linux-vdso.so.1+0x79c) (BuildId: 611870d34ca7b0f7f70efb81ab546d1b3826218d)
+    #4 0xffffae507624  (/lib/aarch64-linux-gnu/libc.so.6+0x87624) (BuildId: 32fa4d6f3a8d5f430bdb7af2eb779470cd5ec7c2)
+    #5 0xffffae4bcb38 in raise (/lib/aarch64-linux-gnu/libc.so.6+0x3cb38) (BuildId: 32fa4d6f3a8d5f430bdb7af2eb779470cd5ec7c2)
+    #6 0xffffae4a7dfc in abort (/lib/aarch64-linux-gnu/libc.so.6+0x27dfc) (BuildId: 32fa4d6f3a8d5f430bdb7af2eb779470cd5ec7c2)
+    #7 0xffffae4b5cb8  (/lib/aarch64-linux-gnu/libc.so.6+0x35cb8) (BuildId: 32fa4d6f3a8d5f430bdb7af2eb779470cd5ec7c2)
+    #8 0xffffae4b5d28 in __assert_fail (/lib/aarch64-linux-gnu/libc.so.6+0x35d28) (BuildId: 32fa4d6f3a8d5f430bdb7af2eb779470cd5ec7c2)
+    #9 0xaaaae5d4ce38 in (anonymous namespace)::TestNode(miniscript::MiniscriptContext, std::shared_ptr<miniscript::Node<CPubKey> const> const&, FuzzedDataProvider&) /ci_container_base/ci/scratch/build-aarch64-unknown-linux-gnu/src/test/fuzz/./test/fuzz/miniscript.cpp:1187:9
+    #10 0xaaaae5d55768 in miniscript_smart_fuzz_target(std::span<unsigned char const, 18446744073709551615ul>) /ci_container_base/ci/scratch/build-aarch64-unknown-linux-gnu/src/test/fuzz/./test/fuzz/miniscript.cpp:1279:5
+    #11 0xaaaae626ba9c in std::function<void (std::span<unsigned char const, 18446744073709551615ul>)>::operator()(std::span<unsigned char const, 18446744073709551615ul>) const /usr/lib/gcc/aarch64-linux-gnu/13/../../../../include/c++/13/bits/std_function.h:591:9
+    #12 0xaaaae626ba9c in test_one_input(std::span<unsigned char const, 18446744073709551615ul>) /ci_container_base/ci/scratch/build-aarch64-unknown-linux-gnu/src/test/fuzz/util/./test/fuzz/fuzz.cpp:85:5
+    #13 0xaaaae626b7e0 in LLVMFuzzerTestOneInput /ci_container_base/ci/scratch/build-aarch64-unknown-linux-gnu/src/test/fuzz/util/./test/fuzz/fuzz.cpp:223:5
+    #14 0xaaaae585abe8 in fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long) (/ci_container_base/ci/scratch/build-aarch64-unknown-linux-gnu/src/test/fuzz/fuzz+0x1cdabe8) (BuildId: 2aeae21417e87b58c23f49c8227e347304d53d6f)
+    #15 0xaaaae585a290 in fuzzer::Fuzzer::RunOne(unsigned char const*, unsigned long, bool, fuzzer::InputInfo*, bool, bool*) (/ci_container_base/ci/scratch/build-aarch64-unknown-linux-gnu/src/test/fuzz/fuzz+0x1cda290) (BuildId: 2aeae21417e87b58c23f49c8227e347304d53d6f)
+    #16 0xaaaae585c130 in fuzzer::Fuzzer::ReadAndExecuteSeedCorpora(std::vector<fuzzer::SizedFile, std::allocator<fuzzer::SizedFile>>&) (/ci_container_base/ci/scratch/build-aarch64-unknown-linux-gnu/src/test/fuzz/fuzz+0x1cdc130) (BuildId: 2aeae21417e87b58c23f49c8227e347304d53d6f)
+    #17 0xaaaae585c698 in fuzzer::Fuzzer::Loop(std::vector<fuzzer::SizedFile, std::allocator<fuzzer::SizedFile>>&) (/ci_container_base/ci/scratch/build-aarch64-unknown-linux-gnu/src/test/fuzz/fuzz+0x1cdc698) (BuildId: 2aeae21417e87b58c23f49c8227e347304d53d6f)
+    #18 0xaaaae5849cb4 in fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned long)) (/ci_container_base/ci/scratch/build-aarch64-unknown-linux-gnu/src/test/fuzz/fuzz+0x1cc9cb4) (BuildId: 2aeae21417e87b58c23f49c8227e347304d53d6f)
+    #19 0xaaaae58743b0 in main (/ci_container_base/ci/scratch/build-aarch64-unknown-linux-gnu/src/test/fuzz/fuzz+0x1cf43b0) (BuildId: 2aeae21417e87b58c23f49c8227e347304d53d6f)
+    #20 0xffffae4a84c0  (/lib/aarch64-linux-gnu/libc.so.6+0x284c0) (BuildId: 32fa4d6f3a8d5f430bdb7af2eb779470cd5ec7c2)
+    #21 0xffffae4a8594 in __libc_start_main (/lib/aarch64-linux-gnu/libc.so.6+0x28594) (BuildId: 32fa4d6f3a8d5f430bdb7af2eb779470cd5ec7c2)
+    #22 0xaaaae583f6ac in _start (/ci_container_base/ci/scratch/build-aarch64-unknown-linux-gnu/src/test/fuzz/fuzz+0x1cbf6ac) (BuildId: 2aeae21417e87b58c23f49c8227e347304d53d6f)
+
+NOTE: libFuzzer has rudimentary signal handlers.
+      Combine libFuzzer with AddressSanitizer or similar for better crash reports.
+SUMMARY: libFuzzer: deadly signal
+MS: 0 ; base unit: 0000000000000000000000000000000000000000
+0x24,0x1,0x0,0x5,0x30,0x6b,0x26,0xf6,0xc0,0x8f,0x94,0xd9,
+$\001\000\0050k&\366\300\217\224\331
+artifact_prefix='./'; Test unit written to ./crash-c551bf4c0924abd717620b708b22adda9fb351ee
+Base64: JAEABTBrJvbAj5TZ
+
+⚠️ Failure generated from target with exit code 77: ['/ci_container_base/ci/scratch/build-aarch64-unknown-linux-gnu/src/test/fuzz/fuzz', '-runs=1', PosixPath('/ci_container_base/ci/scratch/qa-assets/fuzz_corpora/miniscript_smart')]
+root@64ee64269b01:/ci_container_base/ci/scratch/build-aarch64-unknown-linux-gnu/test/fuzz# 
+
+----------------------------------
+failed script on src/test/fuzz/miniscript.cpp
+to reproduce: 
+%docker exec -it ci_native_fuzz sh
+
+to install lldb on Ubuntu:
+# apt install lldb
+
+# cd /ci_container_base/ci/scratch/build-aarch64-unknown-linux-gnu/test/fuzz
+
+# ./test_runner.py -j8 -l DEBUG /ci_container_base/ci/scratch/qa-assets/fuzz_corpora/ miniscript_smart --empty_min_time=60
+
+to build in docker container:
+# cd /ci_container_base/ci/scratch/build-aarch64-unknown-linux-gnu
+# cmake --build . -j8 --target all install
+
+to copy files:
+% docker cp miniscript.cpp ci_native_fuzz:/tmp
+
