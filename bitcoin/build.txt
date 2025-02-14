@@ -1,6 +1,8 @@
 This is for Apple M1 chip, Sequoia 15.1.1 (arm64)
 
 ----------------------------------
+----------------------------------
+----------------------------------
 llvm:
 It's not that we can install any LLVM, but we need to install the right version of llvm that works for the version of /usr/bin/ld:
 
@@ -34,7 +36,13 @@ or
 
 2) cmake (newer versions):
 % cmake -B build -DENABLE_WALLET=ON -DCMAKE_CXX_COMPILER=/opt/homebrew/opt/llvm@16/bin/clang++ -DCMAKE_C_COMPILER=/opt/homebrew/opt/llvm@16/bin/clang
+
+# enable Debug build
 % cmake -B build -DENABLE_WALLET=ON -DCMAKE_CXX_COMPILER=/opt/homebrew/opt/llvm@16/bin/clang++ -DCMAKE_C_COMPILER=/opt/homebrew/opt/llvm@16/bin/clang -DCMAKE_BUILD_TYPE=Debug
+
+#enable ZMQ
+% brew install zeromq
+% cmake -B build -DENABLE_WALLET=ON -DCMAKE_CXX_COMPILER=/opt/homebrew/opt/llvm@16/bin/clang++ -DCMAKE_C_COMPILER=/opt/homebrew/opt/llvm@16/bin/clang -DWITH_ZMQ:BOOL=ON
 
 % cmake --build build
 or 
@@ -58,4 +66,22 @@ test/get_previous_releases.py -b
 To add remote forked repo so you can cherry-pick changes from other peoples pull request:
 % git remote add andremralves https://github.com/andremralves/bitcoin
 % git fetch andremralves
+----------------------------------
+build/src/bitcoind -signet -bind=0.0.0.0:8333
+bitcoind -signet -bind=0.0.0.0:8333
+bitcoind -regtest -bind=0.0.0.0:8333
+
+bitcoind -dnsseed=1 -listen=1
+
+-testnet
+-signet
+-regtest
+bitcoin-cli -regtest getinfo
+bitcoin-cli -regtest getpeerinfo
+bitcoin-cli -regtest getnetworkinfo
+bitcoin-cli -regtest -getinfo
+bitcoin-cli getconnectioncount
+----------------------------------
+bitcoind data folder:
+~/Library/Application Support/Bitcoin
 ----------------------------------

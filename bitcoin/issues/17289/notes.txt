@@ -1,0 +1,76 @@
+------------------------------------
+# run test and generate contrib/completions/bash/bitcoin-cli.bash:
+% build/test/functional/test_runner.py test/functional/tool_cli_bash_completion.py --tmpdir /tmp --nocleanup --overwrite
+
+# validate bash-completion on mac:
+% brew info bash-completion
+
+# switch to bash shell
+% bash
+
+# source the bash_completion script
+% . /opt/homebrew/etc/profile.d/bash_completion.sh
+
+# source bitcoin-cli bash
+% source contrib/completions/bash/bitcoin-cli.bash
+
+# then, without starting bitcoind
+% bitcoin-cli con[TAB]
+
+#this will auto complete to converttopsbt
+% bitcoin-cli converttopsbt
+
+#this will auto complete to converttopsbt
+% bitcoin-cli converttopsbt somestring [TAB]
+false  true
+
+% bitcoin-cli converttopsbt some t[TAB]
+
+# it will auto complete true
+% bitcoin-cli converttopsbt some true
+
+% bitcoin-cli converttopsbt some true t[TAB]
+
+# it will auto complete false
+% bitcoin-cli converttopsbt some true f[TAB]
+
+% bitcoin-cli converttopsbt some true false
+------------------------------------
+/opt/homebrew/bin/bash
+------------------------------------
+default ~/.bitcoin/bitcoin.conf
+% more ~/.bitcoin/bitcoin.conf 
+regtest=1
+server=1
+rpcuser=myuser
+rpcpassword=mypassword
+rpcport=18443
+
+then 
+% bitcoind 
+or
+% bitcoind -daemon
+
+# to stop the daemon:
+% bitcoin-cli stop
+
+# help
+% bitcoin-cli help > help.out
+------------------------------------
+'{"jsonrpc": "2.0", "method": "help", "params": {}, "id": 52}'
+------------------------------------
+brew install bash-completion
+------------------------------------
+# start bitcoind with rpcuser and rpcpassword
+bitcoind -regtest -daemon -server=1 -rpcuser=myuser -rpcpassword=mypassword -rpcport=18443 -rpcallowip=127.0.0.1
+
+# or call from curl:
+curl --user "myuser:mypassword" --data-binary '{"jsonrpc": "2.0", "id": 52, "method": "help", "params": []}' -H 'content-type: text/plain;' http://127.0.0.1:18443
+
+# or call from postman:
+select Authorization tab, select Basic Auth, set Username: myuser, and Password: mypassword
+POST: 127.0.0.1:18443
+Body: {"jsonrpc": "2.0", "id": 52, "method": "help", "params": []} as raw JSON
+
+# this is equivalent to calling from functional python test_runner.py: self.nodes[0].help()
+bitcoin-cli -rpcport=18443 -rpcuser=myuser -rpcpassword=mypassword help
