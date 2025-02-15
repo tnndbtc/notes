@@ -1,4 +1,7 @@
 ------------------------------------
+https://github.com/bitcoin/bitcoin/issues/17289
+PR: https://github.com/bitcoin/bitcoin/pull/30860
+------------------------------------
 # run test and generate contrib/completions/bash/bitcoin-cli.bash:
 % build/test/functional/test_runner.py test/functional/tool_cli_bash_completion.py --tmpdir /tmp --nocleanup --overwrite
 
