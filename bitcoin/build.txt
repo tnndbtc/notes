@@ -56,6 +56,7 @@ or
   -DCMAKE_CXX_COMPILER="$(brew --prefix llvm)@16/bin/clang++" \
   -DAPPEND_LDFLAGS=-Wl,-no_warn_duplicate_libraries
 % cmake --build build_fuzz
+% FUZZ=process_message build_fuzz/src/test/fuzz/fuzz
 
 4) Run all possible tests with
 build/test/functional/test_runner.py --extended
