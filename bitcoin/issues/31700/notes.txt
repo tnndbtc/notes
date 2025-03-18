@@ -1,0 +1,340 @@
+from https://github.com/bitcoin/bitcoin/actions/runs/12885576442/job/35924329366?pr=25832#step:7:15913
+
++ LD_LIBRARY_PATH=/Users/runner/work/bitcoin/bitcoin/depends/aarch64-apple-darwin23.6.0/lib
++ test/functional/test_runner.py --ci -j10 --tmpdirprefix /Users/runner/work/bitcoin/bitcoin/ci/scratch/test_runner/ --ansi --combinedlogslen=99999999 --timeout-factor=40 --quiet --failfast
+
+--v2transport
+
+build/test/functional/test_runner.py test/functional/p2p_orphan_handling.py --tmpdir /tmp --nocleanup --timeout-factor=40 --quiet --failfast --v2transport
+----------------------------------------------
+https://github.com/bitcoin/bitcoin/issues/31700#issuecomment-2730670414
+https://github.com/bitcoin/bitcoin/pull/32063#issuecomment-2730664318
+----------------------------------------------
+test/functional/test_framework/test_node.py
+    def disconnect_p2ps(self):
+        """Close all p2p connections to the node.
+        Use only after each p2p has sent a version message to ensure the wait works."""
+        for p in self.p2ps:
+            p.peer_disconnect()
+        del self.p2ps[:] 
+        
+        # self.wait_until(lambda: self.num_test_p2p_connections() == 0)
+        self.wait_until(lambda: len(self.getorphantxs(verbosity=2)) == 0)
+
+build/test/functional/test_runner.py --extended
+
+feature_index_prune.py                                   | ✖ Failed  | 108 s
+p2p_add_connections.py                                   | ✖ Failed  | 4 s
+
+ALL                                                      | ✖ Failed  | 8897 s (accumulated) 
+----------------------------------------------
+src/net.cpp:
+CConnman::DisconnectNodes()
+    {    
+        // MOVE the erase of m_nodes AFTER DeleteNode(pnode);
+        LOCK(m_nodes_mutex);
+
+        // Delete disconnected nodes
+        std::list<CNode*> nodes_disconnected_copy = m_nodes_disconnected;
+        for (CNode* pnode : nodes_disconnected_copy)
+        {    
+            // Destroy the object only after other threads have stopped using it.
+            m_nodes.erase(remove(m_nodes.begin(), m_nodes.end(), pnode), m_nodes.end());
+            m_nodes_disconnected.remove(pnode);
+        }    
+    } 
+
+build/test/functional/test_runner.py --extended
+
+feature_index_prune.py | ✖ Failed | 107 s
+feature_pruning.py | ✖ Failed | 407 s
+feature_signet.py | ✖ Failed | 3 s
+p2p_ibd_stalling.py --v1transport | ✖ Failed | 86 s
+p2p_invalid_messages.py | ✖ Failed | 2 s
+rpc_net.py --v1transport | ✖ Failed | 2 s
+rpc_net.py --v2transport | ✖ Failed | 4 s
+----------------------------------------------
+Follow hint in https://github.com/bitcoin/bitcoin/pull/32063
+src/net.cpp:void CConnman::DisconnectNodes()
+    {    
+        // Delete disconnected nodes
+        std::list<CNode*> nodes_disconnected_copy = m_nodes_disconnected;
+        for (CNode* pnode : nodes_disconnected_copy)
+        {    
+            // Destroy the object only after other threads have stopped using it.
+            if (pnode->GetRefCount() <= 0) { 
+                m_nodes_disconnected.remove(pnode);
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+                DeleteNode(pnode);
+            }    
+        }    
+    }
+
+Follow your hint that the node needs to successfully disconnect the peer before bumping mocktime, I added one line of "debugging" code to reproduce the issue 100%: in src/net.cpp:CConnman::DisconnectNodes(), add a one second sleep before calling DeleteNode(pnode);
+    {
+        // Delete disconnected nodes
+        std::list<CNode*> nodes_disconnected_copy = m_nodes_disconnected;
+        for (CNode* pnode : nodes_disconnected_copy)
+        {
+            // Destroy the object only after other threads have stopped using it.
+            if (pnode->GetRefCount() <= 0) {
+                m_nodes_disconnected.remove(pnode);
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+                DeleteNode(pnode);
+            }
+        }
+    }
+
+So, even I added your fix of waiting until num_test_p2p_connections reduces to 1, the issue is still 100% reproducible:
+        peer1.peer_disconnect()
+        self.wait_until(lambda: node.num_test_p2p_connections() == 1)
+        node.bumpmocktime(TXREQUEST_TIME_SKIP)
+
+Then, I have moved the sleep 1 second AFTER DeleteNode(pnode); , then the issue is not reproducible.
+
+I agree with the idea that we should wait until the CConnman::DisconnectNodes is fully completed.  However, it seems like this PR needs more work to fully fix the timing issue.
+
+----------------------------------------------
+possibilities that peer2.wait_for_parent_requests([int(parent_peekaboo_AB["txid"], 16), int(parent_missing["txid"], 16)]) will time out
+ChatGPT said:
+The function peer2.wait_for_parent_requests([int(parent_peekaboo_AB["txid"], 16), int(parent_missing["txid"], 16)]) waits for peer2 to receive getdata requests for the given transactions. If it times out, it means the node did not send getdata for those parent transactions within the expected timeframe.
+
+Possible Reasons for Timeout
+Here are the key reasons why this function could time out:
+
+1. The Node Already Has the Parent Transactions
+If peer2’s node already has parent_peekaboo_AB and parent_missing, it won't request them with getdata.
+This happens if the transactions were already in the node’s mempool or received from another peer.
+
+Ruled out, because the node doesn't have the transaction yet, they are sent AFTER: 
+        peer2.wait_for_parent_requests([int(parent_peekaboo_AB["txid"], 16), int(parent_missing["txid"], 16)])
+        peer2.send_and_ping(msg_tx(parent_missing["tx"])) # SENT parent_missing
+        peer2.send_and_ping(msg_tx(parent_peekaboo_AB["tx"])) # SENT parent_peekaboo_AB
+
+
+2. The Node is Not Aware of the Child Transaction Yet
+The node only requests parents when it learns about a child transaction that depends on them.
+If the child transaction (spending parent_peekaboo_AB or parent_missing) was not received yet, the node won't send getdata for the parents.
+
+Ruled out, because the child transaction is still in orphan pool, as confirmed by this statement:
+
+        node.bumpmocktime(TXREQUEST_TIME_SKIP)
+        self.wait_until(lambda: len(node.getorphantxs(verbosity=2)[0]["from"]) == 1) # confirmed that the orphan pool has it
+
+        # Both parents should be requested, now that they are both missing.
+        peer2.wait_for_parent_requests([int(parent_peekaboo_AB["txid"], 16), int(parent_missing["txid"], 16)])
+
+3. The m_txrequest Logic Delays the Request
+The node uses m_txrequest (transaction request manager) to track and schedule transaction requests.
+If the request timing conditions are not met (e.g., the node doesn’t think it's time to retry a request), getdata won’t be sent.
+Possible reasons:
+
+The request interval is still active.
+bumpmocktime(TXREQUEST_TIME_SKIP) wasn’t enough to trigger the request.
+The node is waiting for another peer to provide the transaction first.
+
+Ruled out: in client python code, we have 7 seconds advancement before calling peer2.wait_for_parent_requests: 
+
+        node.bumpmocktime(TXREQUEST_TIME_SKIP) # waited 7 seconds
+        self.wait_until(lambda: len(node.getorphantxs(verbosity=2)[0]["from"]) == 1)
+        # Both parents should be requested, now that they are both missing.
+        peer2.wait_for_parent_requests([int(parent_peekaboo_AB["txid"], 16), int(parent_missing["txid"], 16)])
+
+where TXREQUEST_TIME_SKIP = NONPREF_PEER_TX_DELAY + TXID_RELAY_DELAY + OVERLOADED_PEER_TX_DELAY + 1
+
+On node side, we have Delay calcuated here: src/node/txdownloadman_impl.cpp
+
+    std::chrono::seconds delay{0s};
+    if (!info.m_preferred) delay += NONPREF_PEER_TX_DELAY; // 2s
+    // The orphan wtxid is used, but resolution entails requesting the parents by txid. Sometimes
+    // parent and child are announced and thus requested around the same time, and we happen to
+    // receive child sooner. Waiting a few seconds may allow us to cancel the orphan resolution
+    // request if the parent arrives in that time.
+    if (m_num_wtxid_peers > 0) delay += TXID_RELAY_DELAY; // 2s
+    const bool overloaded = !info.m_relay_permissions && m_txrequest.CountInFlight(nodeid) >= MAX_PEER_TX_REQUEST_IN_FLIGHT;
+    if (overloaded) delay += OVERLOADED_PEER_TX_DELAY; // 2s
+
+The total delay, include overloaded condition, is 6 seconds, so we have advanced the clock 7 seconds which is long enough.  In src/txrequest.cpp::SetTimePoint, the condition "it->m_time <= now" is true for sure.
+
+4. Peer-to-Peer Connection Issues
+If peer2 is not correctly connected to the node:
+It won't receive inv messages.
+The node may not consider peer2 as a valid peer to request from.
+
+5. The Parent Transaction is Not Being Considered as Missing
+If parent_missing was previously marked as "do not request" (e.g., it was rejected or expired from mempool logic), the node won't request it again.
+This can happen if:
+The parent was seen before but failed validation.
+The parent was requested too many times and hit a retry limit.
+
+6. Race Condition in Test Execution
+If the test is written such that wait_for_parent_requests() is called before the node actually triggers getdata, it may timeout.
+Solutions:
+Add sync_with_ping() before waiting to ensure message processing.
+Use longer timeouts to allow getdata to be sent.
+How to Debug
+To check why it is timing out, try:
+
+Checking the node’s logs (debug.log) for getdata messages.
+Manually verifying if the node already has the parent transactions (getrawmempool or getblock).
+Adding print statements before wait_for_parent_requests() to confirm expected conditions.
+
+7. After peer1 disconnects, whether the orphan transaction is removed from orphan pool?  If not, then peer2 will not receive getdata request?
+
+Invalid assumptions.
+
+----------------------------------------------
+        orphan_txs = node.getorphantxs(verbosity=2)
+        self.log.info(f"Orphan pool before waiting: {orphan_txs}")
+        peer2.wait_for_parent_requests([int(parent_peekaboo_AB["txid"], 16), int(parent_missing["txid"], 16)])
+2025-03-05T22:48:13.451000Z TestFramework (INFO): Orphan pool before waiting: [{'txid': '99c5ec5a82f898f7eb0984a1c2e06546e27b0aff020abe33ede612cf5e900121', 'wtxid': 'cc881cd6d310ebd95a60e35bed76fc57c304c46e0cfd6c5d7109632c48dbc99d', 'bytes': 211, 'vsize': 154, 'weight': 616, 'entry': 1741214896, 'expiration': 1741216096, 'from': [1], 'hex': '020000000001028b5b896e72a1843c5b255b88dff466d4459d24b45bdfc3b1fc13ff9a526f85a90000000000000000009828c478fcdd34140e0c8079a86fd85148a330586db8b28b0f5c46f20056333800000000000000000001d84e117e030000002251202913b252fe537830f843bfdc5fa7d20ba48639a87c86ff837b92d083c55ad7c102015121c0000000000000000000000000000000000000000000000000000000000000000102015121c0000000000000000000000000000000000000000000000000000000000000000100000000'}]
+----------------------------------------------
+b request.cpp:53
+
+(lldb) thread list
+Process 72668 stopped
+  thread #1: tid = 0x1bb8016, 0x00000001927a29b0 libsystem_kernel.dylib`read + 8, queue = 'com.apple.main-thread', stop reason = signal SIGSTOP
+  thread #2: tid = 0x1bb801c, 0x00000001927a55cc libsystem_kernel.dylib`__psynch_cvwait + 8, name = 'b-scheduler'
+  thread #3: tid = 0x1bb801d, 0x00000001927a7efc libsystem_kernel.dylib`kevent + 8, name = 'b-http'
+  thread #4: tid = 0x1bb801e, 0x00000001927a55cc libsystem_kernel.dylib`__psynch_cvwait + 8, name = 'b-httpworker.0'
+  thread #5: tid = 0x1bb801f, 0x00000001927a55cc libsystem_kernel.dylib`__psynch_cvwait + 8, name = 'b-httpworker.1'
+  thread #6: tid = 0x1bb8020, 0x00000001927a55cc libsystem_kernel.dylib`__psynch_cvwait + 8, name = 'b-httpworker.2'
+  thread #7: tid = 0x1bb8021, 0x00000001927a55cc libsystem_kernel.dylib`__psynch_cvwait + 8, name = 'b-httpworker.3'
+  thread #8: tid = 0x1bb8022, 0x00000001927a55cc libsystem_kernel.dylib`__psynch_cvwait + 8, name = 'b-httpworker.4'
+  thread #9: tid = 0x1bb8023, 0x00000001927a55cc libsystem_kernel.dylib`__psynch_cvwait + 8, name = 'b-httpworker.5'
+  thread #10: tid = 0x1bb8024, 0x00000001927a55cc libsystem_kernel.dylib`__psynch_cvwait + 8, name = 'b-httpworker.6'
+* thread #11: tid = 0x1bb8025, 0x00000001927a55cc libsystem_kernel.dylib`__psynch_cvwait + 8, name = 'b-httpworker.7'
+  thread #12: tid = 0x1bb8026, 0x00000001927a55cc libsystem_kernel.dylib`__psynch_cvwait + 8, name = 'b-httpworker.8'
+  thread #13: tid = 0x1bb8027, 0x00000001927a55cc libsystem_kernel.dylib`__psynch_cvwait + 8, name = 'b-httpworker.9'
+  thread #14: tid = 0x1bb8028, 0x00000001927a55cc libsystem_kernel.dylib`__psynch_cvwait + 8, name = 'b-httpworker.10'
+  thread #15: tid = 0x1bb8029, 0x00000001927a55cc libsystem_kernel.dylib`__psynch_cvwait + 8, name = 'b-httpworker.11'
+  thread #16: tid = 0x1bb802a, 0x00000001927a55cc libsystem_kernel.dylib`__psynch_cvwait + 8, name = 'b-httpworker.12'
+  thread #17: tid = 0x1bb802b, 0x00000001927a55cc libsystem_kernel.dylib`__psynch_cvwait + 8, name = 'b-httpworker.13'
+  thread #18: tid = 0x1bb802c, 0x00000001927a55cc libsystem_kernel.dylib`__psynch_cvwait + 8, name = 'b-httpworker.14'
+  thread #19: tid = 0x1bb802d, 0x00000001927a55cc libsystem_kernel.dylib`__psynch_cvwait + 8, name = 'b-httpworker.15'
+  thread #20: tid = 0x1bb802e, 0x00000001927a55cc libsystem_kernel.dylib`__psynch_cvwait + 8, name = 'b-scriptch.0'
+  thread #21: tid = 0x1bb802f, 0x00000001927a55cc libsystem_kernel.dylib`__psynch_cvwait + 8, name = 'b-scriptch.1'
+  thread #22: tid = 0x1bb8030, 0x00000001927a55cc libsystem_kernel.dylib`__psynch_cvwait + 8, name = 'b-scriptch.2'
+  thread #23: tid = 0x1bb8031, 0x00000001927a55cc libsystem_kernel.dylib`__psynch_cvwait + 8, name = 'b-scriptch.3'
+  thread #24: tid = 0x1bb8032, 0x00000001927a55cc libsystem_kernel.dylib`__psynch_cvwait + 8, name = 'b-scriptch.4'
+  thread #25: tid = 0x1bb8033, 0x00000001927a55cc libsystem_kernel.dylib`__psynch_cvwait + 8, name = 'b-scriptch.5'
+  thread #26: tid = 0x1bb8034, 0x00000001927a55cc libsystem_kernel.dylib`__psynch_cvwait + 8, name = 'b-scriptch.6'
+  thread #27: tid = 0x1bb8036, 0x00000001927ace9c libsystem_kernel.dylib`__select + 8, name = 'b-net'
+  thread #28: tid = 0x1bb8037, 0x00000001927a55cc libsystem_kernel.dylib`__psynch_cvwait + 8, name = 'b-addcon'
+  thread #29: tid = 0x1bb8038, 0x00000001927a55cc libsystem_kernel.dylib`__psynch_cvwait + 8, name = 'b-msghand'
+----------------------------------------------
+b net_processing.cpp:3982 (NetMsgType::GETDATA)
+b net_processing.cpp:2385 (ProcessGetData)
+b net.cpp:3872 (PushMessage)
+b net.cpp:3877 (m_type==getdata)
+b TxDownloadManagerImpl::GetRequestsToSend (check time advance)
+b txrequest.cpp:610
+
+src/txorphanage.cpp
+b TxOrphanage::AddTx
+b TxOrphanage::EraseTx (:74)
+b TxOrphanage::EraseForPeer (:121)
+
+peer1.peer_disconnect() will invoke:
+* thread #27, name = 'b-net', stop reason = breakpoint 1.1
+  * frame #0: 0x000000010360fb04 bitcoind`TxOrphanage::EraseForPeer(this=0x00006000014fe4a8, peer=0) at txorphanage.cpp:121:5
+    frame #1: 0x00000001031f9fa8 bitcoind`node::TxDownloadManagerImpl::DisconnectedPeer(this=0x00006000014fe490, nodeid=0) at txdownloadman_impl.cpp:165:17
+    frame #2: 0x00000001031f9f34 bitcoind`node::TxDownloadManager::DisconnectedPeer(this=0x0000000133055168, nodeid=0) at txdownloadman_impl.cpp:40:13
+    frame #3: 0x0000000102ebb638 bitcoind`(anonymous namespace)::PeerManagerImpl::FinalizeNode(this=0x0000000133055000, node=0x000000013260b6c0) at net_processing.cpp:1601:25
+    frame #4: 0x0000000102dec0bc bitcoind`CConnman::DeleteNode(this=0x0000000133009200, pnode=0x000000013260b6c0) at net.cpp:3494:16
+    frame #5: 0x0000000102deb060 bitcoind`CConnman::DisconnectNodes(this=0x0000000133009200) at net.cpp:1969:17
+    frame #6: 0x0000000102def698 bitcoind`CConnman::ThreadSocketHandler(this=0x0000000133009200) at net.cpp:2231:9
+    frame #7: 0x0000000102e7f9fc bitcoind`CConnman::Start(CScheduler&, CConnman::Options const&)::$_0::operator()(this=0x000000016e17af20) const at net.cpp:3357:75
+    frame #8: 0x0000000102e7f99c bitcoind`decltype(std::declval<CConnman::Start(CScheduler&, CConnman::Options const&)::$_0&>()()) std::__1::__invoke[abi:v160006]<CConnman::Start(CScheduler&, CConnman::Options const&)::$_0&>(__f=0x000000016e17af20) at invoke.h:394:23
+    frame #9: 0x0000000102e7f8dc bitcoind`void std::__1::__invoke_void_return_wrapper<void, true>::__call<CConnman::Start(CScheduler&, CConnman::Options const&)::$_0&>(__args=0x000000016e17af20) at invoke.h:487:9
+    frame #10: 0x0000000102e7f880 bitcoind`std::__1::__function::__alloc_func<CConnman::Start(CScheduler&, CConnman::Options const&)::$_0, std::__1::allocator<CConnman::Start(CScheduler&, CConnman::Options const&)::$_0>, void ()>::operator()[abi:v160006](this=0x000000016e17af20) at function.h:185:16
+    frame #11: 0x0000000102e7d23c bitcoind`std::__1::__function::__func<CConnman::Start(CScheduler&, CConnman::Options const&)::$_0, std::__1::allocator<CConnman::Start(CScheduler&, CConnman::Options const&)::$_0>, void ()>::operator()(this=0x000000016e17af18) at function.h:356:12
+    frame #12: 0x0000000102cadc74 bitcoind`std::__1::__function::__value_func<void ()>::operator()[abi:v160006](this=0x000000016e17af18) const at function.h:510:16
+    frame #13: 0x0000000102cadbec bitcoind`std::__1::function<void ()>::operator()(this=0x000000016e17af18) const at function.h:1156:12
+    frame #14: 0x000000010405f39c bitcoind`util::TraceThread(thread_name="net", thread_func=function<void ()> @ 0x000000016e17af18) at thread.cpp:21:9
+    frame #15: 0x0000000102e7c518 bitcoind`decltype(std::declval<void (*)(std::__1::basic_string_view<char, std::__1::char_traits<char>>, std::__1::function<void ()>)>()(std::declval<char const*>(), std::declval<CConnman::Start(CScheduler&, CConnman::Options const&)::$_0>())) std::__1::__invoke[abi:v160006]<void (*)(std::__1::basic_string_view<char, std::__1::char_traits<char>>, std::__1::function<void ()>), char const*, CConnman::Start(CScheduler&, CConnman::Options const&)::$_0>(__f=0x0000600002ff4f48, __args=0x0000600002ff4f50, __args=0x0000600002ff4f58) at invoke.h:394:23
+    frame #16: 0x0000000102e7c470 bitcoind`void std::__1::__thread_execute[abi:v160006]<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(std::__1::basic_string_view<char, std::__1::char_traits<char>>, std::__1::function<void ()>), char const*, CConnman::Start(CScheduler&, CConnman::Options const&)::$_0, 2ul, 3ul>(__t=size=4, (null)=__tuple_indices<2UL, 3UL> @ 0x000000016e17af77) at thread:282:5
+    frame #17: 0x0000000102e7bd44 bitcoind`void* std::__1::__thread_proxy[abi:v160006]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(std::__1::basic_string_view<char, std::__1::char_traits<char>>, std::__1::function<void ()>), char const*, CConnman::Start(CScheduler&, CConnman::Options const&)::$_0>>(__vp=0x0000600002ff4f40) at thread:293:5
+    frame #18: 0x000000018adaf2e4 libsystem_pthread.dylib`_pthread_start + 136
+----------------------------------------------
+node.num_test_p2p_connections() will invoke:
+(lldb) bt
+* thread #16, name = 'b-httpworker.12', stop reason = breakpoint 1.1
+  * frame #0: 0x00000001004b4e08 bitcoind`CConnman::GetNodeStats(this=0x000000012f008200, vstats=size=0) const at net.cpp:3626:5
+    frame #1: 0x0000000100aecf1c bitcoind`getpeerinfo()::$_0::operator()(this=0x00000001704355b8, self=0x0000000170435598, request=0x00000001704358b0) const at net.cpp:204:13
+    frame #2: 0x0000000100aece70 bitcoind`decltype(std::declval<getpeerinfo()::$_0&>()(std::declval<RPCHelpMan const&>(), std::declval<JSONRPCRequest const&>())) std::__1::__invoke[abi:v160006]<getpeerinfo()::$_0&, RPCHelpMan const&, JSONRPCRequest const&>(__f=0x00000001704355b8, __args=0x0000000170435598, __args=0x00000001704358b0) at invoke.h:394:23
+    frame #3: 0x0000000100aecd98 bitcoind`UniValue std::__1::__invoke_void_return_wrapper<UniValue, false>::__call<getpeerinfo()::$_0&, RPCHelpMan const&, JSONRPCRequest const&>(__args=0x00000001704355b8, __args=0x0000000170435598, __args=0x00000001704358b0) at invoke.h:478:16
+    frame #4: 0x0000000100aecd24 bitcoind`std::__1::__function::__alloc_func<getpeerinfo()::$_0, std::__1::allocator<getpeerinfo()::$_0>, UniValue (RPCHelpMan const&, JSONRPCRequest const&)>::operator()[abi:v160006](this=0x00000001704355b8, __arg=0x0000000170435598, __arg=0x00000001704358b0) at function.h:185:16
+    frame #5: 0x0000000100aea6dc bitcoind`std::__1::__function::__func<getpeerinfo()::$_0, std::__1::allocator<getpeerinfo()::$_0>, UniValue (RPCHelpMan const&, JSONRPCRequest const&)>::operator()(this=0x00000001704355b0, __arg=0x0000000170435598, __arg=0x00000001704358b0) at function.h:356:12
+    frame #6: 0x000000010154590c bitcoind`std::__1::__function::__value_func<UniValue (RPCHelpMan const&, JSONRPCRequest const&)>::operator()[abi:v160006](this=0x00000001704355b0, __args=0x0000000170435598, __args=0x00000001704358b0) const at function.h:510:16
+    frame #7: 0x000000010152fbf4 bitcoind`std::__1::function<UniValue (RPCHelpMan const&, JSONRPCRequest const&)>::operator()(this= Lambda in File net.cpp at Line 198, __arg=0x0000000170435598, __arg=0x00000001704358b0) const at function.h:1156:12
+    frame #8: 0x000000010152e734 bitcoind`RPCHelpMan::HandleRequest(this=0x0000000170435598, request=0x00000001704358b0) const at util.cpp:684:20
+    frame #9: 0x000000010098c25c bitcoind`CRPCCommand::CRPCCommand(this=0x0000000101aac288, request=0x00000001704358b0, result=0x0000000170435e00, (null)=true)())::'lambda'(JSONRPCRequest const&, UniValue&, bool)::operator()(JSONRPCRequest const&, UniValue&, bool) const at server.h:101:91
+    frame #10: 0x000000010098c1c4 bitcoind`decltype(std::declval<CRPCCommand::CRPCCommand(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>, RPCHelpMan (*)())::'lambda'(JSONRPCRequest const&, UniValue&, bool)&>()(std::declval<JSONRPCRequest const&>(), std::declval<UniValue&>(), std::declval<bool>())) std::__1::__invoke[abi:v160006]<CRPCCommand::CRPCCommand(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>, RPCHelpMan (*)())::'lambda'(JSONRPCRequest const&, UniValue&, bool)&, JSONRPCRequest const&, UniValue&, bool>(__f=0x0000000101aac288, __args=0x00000001704358b0, __args=0x0000000170435e00, __args=0x00000001704357d7) at invoke.h:394:23
+    frame #11: 0x000000010098c0d8 bitcoind`bool std::__1::__invoke_void_return_wrapper<bool, false>::__call<CRPCCommand::CRPCCommand(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>, RPCHelpMan (*)())::'lambda'(JSONRPCRequest const&, UniValue&, bool)&, JSONRPCRequest const&, UniValue&, bool>(__args=0x0000000101aac288, __args=0x00000001704358b0, __args=0x0000000170435e00, __args=0x00000001704357d7) at invoke.h:478:16
+    frame #12: 0x000000010098c058 bitcoind`std::__1::__function::__alloc_func<CRPCCommand::CRPCCommand(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>, RPCHelpMan (*)())::'lambda'(JSONRPCRequest const&, UniValue&, bool), std::__1::allocator<CRPCCommand::CRPCCommand(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>, RPCHelpMan (*)())::'lambda'(JSONRPCRequest const&, UniValue&, bool)>, bool (JSONRPCRequest const&, UniValue&, bool)>::operator()[abi:v160006](this=0x0000000101aac288, __arg=0x00000001704358b0, __arg=0x0000000170435e00, __arg=0x00000001704357d7) at function.h:185:16
+    frame #13: 0x00000001009899f0 bitcoind`std::__1::__function::__func<CRPCCommand::CRPCCommand(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>, RPCHelpMan (*)())::'lambda'(JSONRPCRequest const&, UniValue&, bool), std::__1::allocator<CRPCCommand::CRPCCommand(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>, RPCHelpMan (*)())::'lambda'(JSONRPCRequest const&, UniValue&, bool)>, bool (JSONRPCRequest const&, UniValue&, bool)>::operator()(this=0x0000000101aac280, __arg=0x00000001704358b0, __arg=0x0000000170435e00, __arg=0x00000001704357d7) at function.h:356:12
+    frame #14: 0x00000001007e3138 bitcoind`std::__1::__function::__value_func<bool (JSONRPCRequest const&, UniValue&, bool)>::operator()[abi:v160006](this=0x0000000101aac280, __args=0x00000001704358b0, __args=0x0000000170435e00, __args=0x00000001704357d7) const at function.h:510:16
+    frame #15: 0x00000001007e301c bitcoind`std::__1::function<bool (JSONRPCRequest const&, UniValue&, bool)>::operator()(this= Function = getpeerinfo() , __arg=0x00000001704358b0, __arg=0x0000000170435e00, __arg=true) const at function.h:1156:12
+    frame #16: 0x0000000100c10bbc bitcoind`ExecuteCommand(command=0x0000000101aac250, request=0x0000000170436b10, result=0x0000000170435e00, last_handler=true) at server.cpp:510:20
+    frame #17: 0x0000000100bf602c bitcoind`ExecuteCommands(commands=size=1, request=0x0000000170436b10, result=0x0000000170435e00) at server.cpp:477:13
+    frame #18: 0x0000000100bf5d68 bitcoind`CRPCTable::execute(this=0x0000000101ab1a60, request=0x0000000170436b10) const at server.cpp:497:13
+    frame #19: 0x0000000100bf5828 bitcoind`JSONRPCExec(jreq=0x0000000170436b10, catch_errors=true) at server.cpp:353:31
+    frame #20: 0x000000010032e470 bitcoind`HTTPReq_JSONRPC(context=0x000060000040c2a8, req=0x0000600000a10160) at httprpc.cpp:217:21
+    frame #21: 0x000000010032dc24 bitcoind`StartHTTPRPC(std::__1::any const&)::$_0::operator()(this=0x000060000040c2a8, req=0x0000600000a10160, (null)="") const at httprpc.cpp:368:80
+    frame #22: 0x000000010032dbb0 bitcoind`decltype(std::declval<StartHTTPRPC(std::__1::any const&)::$_0&>()(std::declval<HTTPRequest*>(), std::declval<std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>> const&>())) std::__1::__invoke[abi:v160006]<StartHTTPRPC(std::__1::any const&)::$_0&, HTTPRequest*, std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>> const&>(__f=0x000060000040c2a8, __args=0x0000000170436e10, __args="") at invoke.h:394:23
+    frame #23: 0x000000010032dad0 bitcoind`bool std::__1::__invoke_void_return_wrapper<bool, false>::__call<StartHTTPRPC(std::__1::any const&)::$_0&, HTTPRequest*, std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>> const&>(__args=0x000060000040c2a8, __args=0x0000000170436e10, __args="") at invoke.h:478:16
+    frame #24: 0x000000010032da58 bitcoind`std::__1::__function::__alloc_func<StartHTTPRPC(std::__1::any const&)::$_0, std::__1::allocator<StartHTTPRPC(std::__1::any const&)::$_0>, bool (HTTPRequest*, std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>> const&)>::operator()[abi:v160006](this=0x000060000040c2a8, __arg=0x0000000170436e10, __arg="") at function.h:185:16
+    frame #25: 0x000000010032b43c bitcoind`std::__1::__function::__func<StartHTTPRPC(std::__1::any const&)::$_0, std::__1::allocator<StartHTTPRPC(std::__1::any const&)::$_0>, bool (HTTPRequest*, std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>> const&)>::operator()(this=0x000060000040c2a0, __arg=0x0000000170436e10, __arg="") at function.h:356:12
+    frame #26: 0x000000010034e218 bitcoind`std::__1::__function::__value_func<bool (HTTPRequest*, std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>> const&)>::operator()[abi:v160006](this=0x000060000291f0e8, __args=0x0000000170436e10, __args="") const at function.h:510:16
+    frame #27: 0x000000010034e10c bitcoind`std::__1::function<bool (HTTPRequest*, std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>> const&)>::operator()(this= Lambda in File httprpc.cpp at Line 368, __arg=0x0000600000a10160, __arg="") const at function.h:1156:12
+    frame #28: 0x000000010034dd70 bitcoind`HTTPWorkItem::operator()(this=0x000060000291f0c0) at httpserver.cpp:60:9
+    frame #29: 0x00000001003615e0 bitcoind`WorkQueue<HTTPClosure>::Run(this=0x0000600003d14000) at httpserver.cpp:115:13
+    frame #30: 0x000000010033a7ac bitcoind`HTTPWorkQueueRun(queue=0x0000600003d14000, worker_num=12) at httpserver.cpp:417:12
+    frame #31: 0x000000010035e518 bitcoind`decltype(std::declval<void (*)(WorkQueue<HTTPClosure>*, int)>()(std::declval<WorkQueue<HTTPClosure>*>(), std::declval<int>())) std::__1::__invoke[abi:v160006]<void (*)(WorkQueue<HTTPClosure>*, int), WorkQueue<HTTPClosure>*, int>(__f=0x0000600000a14348, __args=0x0000600000a14350, __args=0x0000600000a14358) at invoke.h:394:23
+    frame #32: 0x000000010035e3d4 bitcoind`void std::__1::__thread_execute[abi:v160006]<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(WorkQueue<HTTPClosure>*, int), WorkQueue<HTTPClosure>*, int, 2ul, 3ul>(__t=size=4, (null)=__tuple_indices<2UL, 3UL> @ 0x0000000170436f77) at thread:282:5
+    frame #33: 0x000000010035d390 bitcoind`void* std::__1::__thread_proxy[abi:v160006]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(WorkQueue<HTTPClosure>*, int), WorkQueue<HTTPClosure>*, int>>(__vp=0x0000600000a14340) at thread:293:5
+    frame #34: 0x000000018adaf2e4 libsystem_pthread.dylib`_pthread_start + 136
+
+----------------------------------------------
+node.getorphantxs(verbosity=2)[0]["from"] will invoke:
+(lldb) bt
+* thread #18, name = 'b-httpworker.14', stop reason = breakpoint 1.1
+  * frame #0: 0x00000001034ea63c bitcoind`TxOrphanage::GetOrphanTransactions(this=0x000060000297e4a8) const at txorphanage.cpp:317:5
+    frame #1: 0x00000001030d4630 bitcoind`node::TxDownloadManagerImpl::GetOrphanTransactions(this=0x000060000297e490) const at txdownloadman_impl.cpp:593:24
+    frame #2: 0x00000001030d45c8 bitcoind`node::TxDownloadManager::GetOrphanTransactions(this=0x0000000135808968) const at txdownloadman_impl.cpp:88:20
+    frame #3: 0x0000000102d86cc4 bitcoind`(anonymous namespace)::PeerManagerImpl::GetOrphanTransactions(this=0x0000000135808800) at net_processing.cpp:1728:28
+    frame #4: 0x00000001032a8d5c bitcoind`getorphantxs()::$_0::operator()(this=0x000000016dd295b8, self=0x000000016dd29598, request=0x000000016dd298b0) const at mempool.cpp:894:72
+    frame #5: 0x00000001032a8cbc bitcoind`decltype(std::declval<getorphantxs()::$_0&>()(std::declval<RPCHelpMan const&>(), std::declval<JSONRPCRequest const&>())) std::__1::__invoke[abi:v160006]<getorphantxs()::$_0&, RPCHelpMan const&, JSONRPCRequest const&>(__f=0x000000016dd295b8, __args=0x000000016dd29598, __args=0x000000016dd298b0) at invoke.h:394:23
+    frame #6: 0x00000001032a8be4 bitcoind`UniValue std::__1::__invoke_void_return_wrapper<UniValue, false>::__call<getorphantxs()::$_0&, RPCHelpMan const&, JSONRPCRequest const&>(__args=0x000000016dd295b8, __args=0x000000016dd29598, __args=0x000000016dd298b0) at invoke.h:478:16
+    frame #7: 0x00000001032a8b70 bitcoind`std::__1::__function::__alloc_func<getorphantxs()::$_0, std::__1::allocator<getorphantxs()::$_0>, UniValue (RPCHelpMan const&, JSONRPCRequest const&)>::operator()[abi:v160006](this=0x000000016dd295b8, __arg=0x000000016dd29598, __arg=0x000000016dd298b0) at function.h:185:16
+    frame #8: 0x00000001032a6528 bitcoind`std::__1::__function::__func<getorphantxs()::$_0, std::__1::allocator<getorphantxs()::$_0>, UniValue (RPCHelpMan const&, JSONRPCRequest const&)>::operator()(this=0x000000016dd295b0, __arg=0x000000016dd29598, __arg=0x000000016dd298b0) at function.h:356:12
+    frame #9: 0x0000000103d698cc bitcoind`std::__1::__function::__value_func<UniValue (RPCHelpMan const&, JSONRPCRequest const&)>::operator()[abi:v160006](this=0x000000016dd295b0, __args=0x000000016dd29598, __args=0x000000016dd298b0) const at function.h:510:16
+    frame #10: 0x0000000103d53bb4 bitcoind`std::__1::function<UniValue (RPCHelpMan const&, JSONRPCRequest const&)>::operator()(this= Lambda in File mempool.cpp at Line 891, __arg=0x000000016dd29598, __arg=0x000000016dd298b0) const at function.h:1156:12
+    frame #11: 0x0000000103d526f4 bitcoind`RPCHelpMan::HandleRequest(this=0x000000016dd29598, request=0x000000016dd298b0) const at util.cpp:684:20
+    frame #12: 0x00000001031afa78 bitcoind`CRPCCommand::CRPCCommand(this=0x00000001042cfac0, request=0x000000016dd298b0, result=0x000000016dd29e00, (null)=true)())::'lambda'(JSONRPCRequest const&, UniValue&, bool)::operator()(JSONRPCRequest const&, UniValue&, bool) const at server.h:101:91
+    frame #13: 0x00000001031af9e0 bitcoind`decltype(std::declval<CRPCCommand::CRPCCommand(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>, RPCHelpMan (*)())::'lambda'(JSONRPCRequest const&, UniValue&, bool)&>()(std::declval<JSONRPCRequest const&>(), std::declval<UniValue&>(), std::declval<bool>())) std::__1::__invoke[abi:v160006]<CRPCCommand::CRPCCommand(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>, RPCHelpMan (*)())::'lambda'(JSONRPCRequest const&, UniValue&, bool)&, JSONRPCRequest const&, UniValue&, bool>(__f=0x00000001042cfac0, __args=0x000000016dd298b0, __args=0x000000016dd29e00, __args=0x000000016dd297d7) at invoke.h:394:23
+    frame #14: 0x00000001031af8f4 bitcoind`bool std::__1::__invoke_void_return_wrapper<bool, false>::__call<CRPCCommand::CRPCCommand(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>, RPCHelpMan (*)())::'lambda'(JSONRPCRequest const&, UniValue&, bool)&, JSONRPCRequest const&, UniValue&, bool>(__args=0x00000001042cfac0, __args=0x000000016dd298b0, __args=0x000000016dd29e00, __args=0x000000016dd297d7) at invoke.h:478:16
+    frame #15: 0x00000001031af874 bitcoind`std::__1::__function::__alloc_func<CRPCCommand::CRPCCommand(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>, RPCHelpMan (*)())::'lambda'(JSONRPCRequest const&, UniValue&, bool), std::__1::allocator<CRPCCommand::CRPCCommand(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>, RPCHelpMan (*)())::'lambda'(JSONRPCRequest const&, UniValue&, bool)>, bool (JSONRPCRequest const&, UniValue&, bool)>::operator()[abi:v160006](this=0x00000001042cfac0, __arg=0x000000016dd298b0, __arg=0x000000016dd29e00, __arg=0x000000016dd297d7) at function.h:185:16
+    frame #16: 0x00000001031ad20c bitcoind`std::__1::__function::__func<CRPCCommand::CRPCCommand(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>, RPCHelpMan (*)())::'lambda'(JSONRPCRequest const&, UniValue&, bool), std::__1::allocator<CRPCCommand::CRPCCommand(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>, RPCHelpMan (*)())::'lambda'(JSONRPCRequest const&, UniValue&, bool)>, bool (JSONRPCRequest const&, UniValue&, bool)>::operator()(this=0x00000001042cfab8, __arg=0x000000016dd298b0, __arg=0x000000016dd29e00, __arg=0x000000016dd297d7) at function.h:356:12
+    frame #17: 0x000000010300648c bitcoind`std::__1::__function::__value_func<bool (JSONRPCRequest const&, UniValue&, bool)>::operator()[abi:v160006](this=0x00000001042cfab8, __args=0x000000016dd298b0, __args=0x000000016dd29e00, __args=0x000000016dd297d7) const at function.h:510:16
+    frame #18: 0x0000000103006370 bitcoind`std::__1::function<bool (JSONRPCRequest const&, UniValue&, bool)>::operator()(this= Function = getorphantxs() , __arg=0x000000016dd298b0, __arg=0x000000016dd29e00, __arg=true) const at function.h:1156:12
+    frame #19: 0x00000001034343d8 bitcoind`ExecuteCommand(command=0x00000001042cfa88, request=0x000000016dd2ab10, result=0x000000016dd29e00, last_handler=true) at server.cpp:510:20
+    frame #20: 0x0000000103419848 bitcoind`ExecuteCommands(commands=size=1, request=0x000000016dd2ab10, result=0x000000016dd29e00) at server.cpp:477:13
+    frame #21: 0x0000000103419584 bitcoind`CRPCTable::execute(this=0x00000001042d5a60, request=0x000000016dd2ab10) const at server.cpp:497:13
+    frame #22: 0x0000000103419044 bitcoind`JSONRPCExec(jreq=0x000000016dd2ab10, catch_errors=true) at server.cpp:353:31
+    frame #23: 0x0000000102b517c4 bitcoind`HTTPReq_JSONRPC(context=0x0000600001c688d8, req=0x0000600001273100) at httprpc.cpp:217:21
+    frame #24: 0x0000000102b50f78 bitcoind`StartHTTPRPC(std::__1::any const&)::$_0::operator()(this=0x0000600001c688d8, req=0x0000600001273100, (null)="") const at httprpc.cpp:368:80
+    frame #25: 0x0000000102b50f04 bitcoind`decltype(std::declval<StartHTTPRPC(std::__1::any const&)::$_0&>()(std::declval<HTTPRequest*>(), std::declval<std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>> const&>())) std::__1::__invoke[abi:v160006]<StartHTTPRPC(std::__1::any const&)::$_0&, HTTPRequest*, std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>> const&>(__f=0x0000600001c688d8, __args=0x000000016dd2ae10, __args="") at invoke.h:394:23
+    frame #26: 0x0000000102b50e24 bitcoind`bool std::__1::__invoke_void_return_wrapper<bool, false>::__call<StartHTTPRPC(std::__1::any const&)::$_0&, HTTPRequest*, std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>> const&>(__args=0x0000600001c688d8, __args=0x000000016dd2ae10, __args="") at invoke.h:478:16
+    frame #27: 0x0000000102b50dac bitcoind`std::__1::__function::__alloc_func<StartHTTPRPC(std::__1::any const&)::$_0, std::__1::allocator<StartHTTPRPC(std::__1::any const&)::$_0>, bool (HTTPRequest*, std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>> const&)>::operator()[abi:v160006](this=0x0000600001c688d8, __arg=0x000000016dd2ae10, __arg="") at function.h:185:16
+    frame #28: 0x0000000102b4e790 bitcoind`std::__1::__function::__func<StartHTTPRPC(std::__1::any const&)::$_0, std::__1::allocator<StartHTTPRPC(std::__1::any const&)::$_0>, bool (HTTPRequest*, std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>> const&)>::operator()(this=0x0000600001c688d0, __arg=0x000000016dd2ae10, __arg="") at function.h:356:12
+    frame #29: 0x0000000102b7156c bitcoind`std::__1::__function::__value_func<bool (HTTPRequest*, std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>> const&)>::operator()[abi:v160006](this=0x000060000317c708, __args=0x000000016dd2ae10, __args="") const at function.h:510:16
+    frame #30: 0x0000000102b71460 bitcoind`std::__1::function<bool (HTTPRequest*, std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>> const&)>::operator()(this= Lambda in File httprpc.cpp at Line 368, __arg=0x0000600001273100, __arg="") const at function.h:1156:12
+    frame #31: 0x0000000102b710c4 bitcoind`HTTPWorkItem::operator()(this=0x000060000317c6e0) at httpserver.cpp:60:9
+    frame #32: 0x0000000102b84934 bitcoind`WorkQueue<HTTPClosure>::Run(this=0x0000600002574000) at httpserver.cpp:115:13
+    frame #33: 0x0000000102b5db00 bitcoind`HTTPWorkQueueRun(queue=0x0000600002574000, worker_num=14) at httpserver.cpp:417:12
+    frame #34: 0x0000000102b8186c bitcoind`decltype(std::declval<void (*)(WorkQueue<HTTPClosure>*, int)>()(std::declval<WorkQueue<HTTPClosure>*>(), std::declval<int>())) std::__1::__invoke[abi:v160006]<void (*)(WorkQueue<HTTPClosure>*, int), WorkQueue<HTTPClosure>*, int>(__f=0x0000600001274c08, __args=0x0000600001274c10, __args=0x0000600001274c18) at invoke.h:394:23
+    frame #35: 0x0000000102b81728 bitcoind`void std::__1::__thread_execute[abi:v160006]<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(WorkQueue<HTTPClosure>*, int), WorkQueue<HTTPClosure>*, int, 2ul, 3ul>(__t=size=4, (null)=__tuple_indices<2UL, 3UL> @ 0x000000016dd2af77) at thread:282:5
+    frame #36: 0x0000000102b806e4 bitcoind`void* std::__1::__thread_proxy[abi:v160006]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(WorkQueue<HTTPClosure>*, int), WorkQueue<HTTPClosure>*, int>>(__vp=0x0000600001274c00) at thread:293:5
+    frame #37: 0x000000018adaf2e4 libsystem_pthread.dylib`_pthread_start + 136

@@ -1,0 +1,194 @@
+node.sendrawtransaction(parent_peekaboo_AB["hex"])
+
+2025-02-24T16:37:30.800091Z (mocktime: 2025-02-24T16:37:07Z) [http] [httpserver.cpp:306] [http_request_cb] [http] Received a POST request for / from 127.0.0.1:50963
+2025-02-24T16:37:30.800503Z (mocktime: 2025-02-24T16:37:07Z) [httpworker.0] [rpc/request.cpp:241] [parse] [rpc] ThreadRPCServer method=sendrawtransaction user=__cookie__
+2025-02-24T16:37:30.806806Z (mocktime: 2025-02-24T16:37:07Z) [httpworker.0] [txmempool.cpp:700] [check] [mempool] Checking mempool with 0 transactions and 0 inputs
+2025-02-24T16:37:30.809019Z (mocktime: 2025-02-24T16:37:07Z) [httpworker.0] [validationinterface.cpp:198] [TransactionAddedToMempool] [validation] Enqueuing TransactionAddedToMempool: txid=a9856f529aff13fcb1c3df5bb4249d45d466f4df885b255b3c84a1726e895b8b wtxid=84df52eb64664912f81779452fa4e4dfe8c0edd261117c127a213b09034941fa
+2025-02-24T16:37:30.809312Z (mocktime: 2025-02-24T16:37:07Z) [scheduler] [validationinterface.cpp:198] [operator()] [validation] TransactionAddedToMempool: txid=a9856f529aff13fcb1c3df5bb4249d45d466f4df885b255b3c84a1726e895b8b wtxid=84df52eb64664912f81779452fa4e4dfe8c0edd261117c127a213b09034941fa
+2025-02-24T16:37:30.810424Z (mocktime: 2025-02-24T16:37:07Z) [httpworker.0] [txmempool.cpp:700] [check] [mempool] Checking mempool with 1 transactions and 2 inputs
+
+-------------------
+peer1 = node.add_p2p_connection(PeerTxRelayer())
+
+2025-02-24T16:38:37.538670Z (mocktime: 2025-02-24T16:37:07Z) [net] [net.cpp:3830] [CNode] [net] Added connection peer=0
+2025-02-24T16:38:37.539858Z (mocktime: 2025-02-24T16:37:07Z) [net] [net.cpp:1852] [CreateNodeFromAcceptedSocket] [net] connection from 127.0.0.1:51052 accepted
+2025-02-24T16:38:37.540380Z (mocktime: 2025-02-24T16:37:07Z) [msghand] [logging/timer.h:58] [Log] [lock] Enter: lock contention connman.m_nodes_mutex, net.h:1647 started
+2025-02-24T16:38:37.540405Z (mocktime: 2025-02-24T16:37:07Z) [msghand] [logging/timer.h:58] [Log] [lock] Enter: lock contention connman.m_nodes_mutex, net.h:1647 completed (2μs)
+2025-02-24T16:38:37.540482Z (mocktime: 2025-02-24T16:37:07Z) [msghand] [net_processing.cpp:3380] [ProcessMessage] [net] received: version (111 bytes) peer=0
+2025-02-24T16:38:37.540550Z (mocktime: 2025-02-24T16:37:07Z) [msghand] [net.cpp:3874] [PushMessage] [net] sending version (114 bytes) peer=0
+2025-02-24T16:38:37.540649Z (mocktime: 2025-02-24T16:37:07Z) [msghand] [net_processing.cpp:1515] [PushNodeVersion] [net] send version message: version 70016, blocks=370, txrelay=1, peer=0
+2025-02-24T16:38:37.540667Z (mocktime: 2025-02-24T16:37:07Z) [msghand] [net.cpp:3874] [PushMessage] [net] sending wtxidrelay (0 bytes) peer=0
+2025-02-24T16:38:37.540720Z (mocktime: 2025-02-24T16:37:07Z) [msghand] [net.cpp:3874] [PushMessage] [net] sending sendaddrv2 (0 bytes) peer=0
+2025-02-24T16:38:37.541795Z (mocktime: 2025-02-24T16:37:07Z) [msghand] [net.cpp:3874] [PushMessage] [net] sending verack (0 bytes) peer=0
+2025-02-24T16:38:37.541882Z (mocktime: 2025-02-24T16:37:07Z) [msghand] [net_processing.cpp:3580] [ProcessMessage] [net] receive version message: /python-p2p-tester:0.0.3/: version 70016, blocks=-1, us=127.0.0.1:11000, txrelay=1, peer=0
+2025-02-24T16:38:37.541933Z (mocktime: 2025-02-24T16:37:07Z) [msghand] [net_processing.cpp:3380] [ProcessMessage] [net] received: wtxidrelay (0 bytes) peer=0
+2025-02-24T16:38:37.541974Z (mocktime: 2025-02-24T16:37:07Z) [msghand] [net_processing.cpp:3380] [ProcessMessage] [net] received: verack (0 bytes) peer=0
+2025-02-24T16:38:37.541997Z (mocktime: 2025-02-24T16:37:07Z) [msghand] [net_processing.cpp:3625] [ProcessMessage] New inbound v1 peer connected: version: 70016, blocks=-1, peer=0
+2025-02-24T16:38:37.542214Z (mocktime: 2025-02-24T16:37:07Z) [msghand] [net.cpp:3874] [PushMessage] [net] sending sendcmpct (9 bytes) peer=0
+2025-02-24T16:38:37.542312Z (mocktime: 2025-02-24T16:37:07Z) [msghand] [net.cpp:3874] [PushMessage] [net] sending ping (8 bytes) peer=0
+2025-02-24T16:38:37.542428Z (mocktime: 2025-02-24T16:37:07Z) [msghand] [net.cpp:3874] [PushMessage] [net] sending getheaders (677 bytes) peer=0
+2025-02-24T16:38:37.542518Z (mocktime: 2025-02-24T16:37:07Z) [msghand] [net_processing.cpp:5508] [SendMessages] [net] initial getheaders (369) to peer=0 (startheight:-1)
+2025-02-24T16:38:37.542994Z (mocktime: 2025-02-24T16:37:07Z) [msghand] [net.cpp:3874] [PushMessage] [net] sending feefilter (8 bytes) peer=0
+2025-02-24T16:38:37.543087Z (mocktime: 2025-02-24T16:37:07Z) [msghand] [net_processing.cpp:3380] [ProcessMessage] [net] received: getaddr (0 bytes) peer=0
+2025-02-24T16:38:37.543204Z (mocktime: 2025-02-24T16:37:07Z) [msghand] [addrman.cpp:849] [GetAddr_] [addrman] GetAddr returned 0 random addresses
+2025-02-24T16:38:37.543357Z (mocktime: 2025-02-24T16:37:07Z) [msghand] [net_processing.cpp:3380] [ProcessMessage] [net] received: pong (8 bytes) peer=0
+2025-02-24T16:38:37.593512Z (mocktime: 2025-02-24T16:37:07Z) [msghand] [logging/timer.h:58] [Log] [lock] Enter: lock contention connman.m_nodes_mutex, net.h:1647 started
+2025-02-24T16:38:37.593550Z (mocktime: 2025-02-24T16:37:07Z) [msghand] [logging/timer.h:58] [Log] [lock] Enter: lock contention connman.m_nodes_mutex, net.h:1647 completed (2μs)
+2025-02-24T16:38:37.593592Z (mocktime: 2025-02-24T16:37:07Z) [msghand] [net_processing.cpp:3380] [ProcessMessage] [net] received: ping (8 bytes) peer=0
+2025-02-24T16:38:37.593623Z (mocktime: 2025-02-24T16:37:07Z) [msghand] [net.cpp:3874] [PushMessage] [net] sending pong (8 bytes) peer=0
+2025-02-24T16:38:37.593770Z (mocktime: 2025-02-24T16:37:07Z) [msghand] [net_processing.cpp:3380] [ProcessMessage] [net] received: ping (8 bytes) peer=0
+2025-02-24T16:38:37.593794Z (mocktime: 2025-02-24T16:37:07Z) [msghand] [net.cpp:3874] [PushMessage] [net] sending pong (8 bytes) peer=0
+2025-02-24T16:38:37.648790Z (mocktime: 2025-02-24T16:37:07Z) [http] [httpserver.cpp:306] [http_request_cb] [http] Received a POST request for / from 127.0.0.1:50963
+2025-02-24T16:38:37.648941Z (mocktime: 2025-02-24T16:37:07Z) [httpworker.6] [rpc/request.cpp:241] [parse] [rpc] ThreadRPCServer method=getpeerinfo user=__cookie__
+
+-------------------
+peer1.send_and_ping(msg_inv([orphan_inv]))
+
+2025-02-24T16:39:32.382825Z (mocktime: 2025-02-24T16:37:07Z) [msghand] [net_processing.cpp:3380] [ProcessMessage] [net] received: inv (37 bytes) peer=0
+2025-02-24T16:39:32.382967Z (mocktime: 2025-02-24T16:37:07Z) [msghand] [net_processing.cpp:3943] [ProcessMessage] [net] got inv: wtx cc881cd6d310ebd95a60e35bed76fc57c304c46e0cfd6c5d7109632c48dbc99d  new peer=0
+2025-02-24T16:39:32.383068Z (mocktime: 2025-02-24T16:37:07Z) [msghand] [net_processing.cpp:3380] [ProcessMessage] [net] received: ping (8 bytes) peer=0
+2025-02-24T16:39:32.383106Z (mocktime: 2025-02-24T16:37:07Z) [msghand] [net.cpp:3874] [PushMessage] [net] sending pong (8 bytes) peer=0
+2025-02-24T16:39:32.383263Z (mocktime: 2025-02-24T16:37:07Z) [msghand] [net_processing.cpp:3380] [ProcessMessage] [net] received: ping (8 bytes) peer=0
+2025-02-24T16:39:32.383292Z (mocktime: 2025-02-24T16:37:07Z) [msghand] [net.cpp:3874] [PushMessage] [net] sending pong (8 bytes) peer=0
+
+-------------------
+node.bumpmocktime(TXREQUEST_TIME_SKIP)
+2025-02-24T16:40:10.073172Z (mocktime: 2025-02-24T16:37:07Z) [http] [httpserver.cpp:306] [http_request_cb] [http] Received a POST request for / from 127.0.0.1:50963
+2025-02-24T16:40:10.073377Z (mocktime: 2025-02-24T16:37:07Z) [httpworker.4] [rpc/request.cpp:241] [parse] [rpc] ThreadRPCServer method=setmocktime user=__cookie__
+2025-02-24T16:40:10.075444Z (mocktime: 2025-02-24T16:37:14Z) [msghand] [node/txdownloadman_impl.cpp:282] [GetRequestsToSend] [net] Requesting wtx cc881cd6d310ebd95a60e35bed76fc57c304c46e0cfd6c5d7109632c48dbc99d peer=0
+2025-02-24T16:40:10.075545Z (mocktime: 2025-02-24T16:37:14Z) [msghand] [net.cpp:3874] [PushMessage] [net] sending getdata (37 bytes) peer=0
+-------------------
+peer1.send_and_ping(msg_tx(orphan["tx"]))
+
+2025-02-24T16:41:04.637033Z (mocktime: 2025-02-24T16:37:14Z) [msghand] [net_processing.cpp:3380] [ProcessMessage] [net] received: tx (211 bytes) peer=0
+2025-02-24T16:41:04.638832Z (mocktime: 2025-02-24T16:37:14Z) [msghand] [txmempool.cpp:700] [check] [mempool] Checking mempool with 1 transactions and 2 inputs
+2025-02-24T16:41:04.640221Z (mocktime: 2025-02-24T16:37:14Z) [msghand] [net_processing.cpp:2979] [ProcessInvalidTx] [mempoolrej] 99c5ec5a82f898f7eb0984a1c2e06546e27b0aff020abe33ede612cf5e900121 (wtxid=cc881cd6d310ebd95a60e35bed76fc57c304c46e0cfd6c5d7109632c48dbc99d) from peer=0 was not accepted: bad-txns-inputs-missingorspent
+2025-02-24T16:41:04.641049Z (mocktime: 2025-02-24T16:37:14Z) [msghand] [node/txdownloadman_impl.cpp:266] [MaybeAddOrphanResolutionCandidate] [txpackages] added peer=0 as a candidate for resolving orphan cc881cd6d310ebd95a60e35bed76fc57c304c46e0cfd6c5d7109632c48dbc99d
+2025-02-24T16:41:04.641416Z (mocktime: 2025-02-24T16:37:14Z) [msghand] [txorphanage.cpp:51] [AddTx] [txpackages] stored orphan tx 99c5ec5a82f898f7eb0984a1c2e06546e27b0aff020abe33ede612cf5e900121 (wtxid=cc881cd6d310ebd95a60e35bed76fc57c304c46e0cfd6c5d7109632c48dbc99d), weight: 616 (mapsz 1 outsz 2)
+2025-02-24T16:41:04.641614Z (mocktime: 2025-02-24T16:37:14Z) [msghand] [net_processing.cpp:3380] [ProcessMessage] [net] received: ping (8 bytes) peer=0
+2025-02-24T16:41:04.641664Z (mocktime: 2025-02-24T16:37:14Z) [msghand] [net.cpp:3874] [PushMessage] [net] sending pong (8 bytes) peer=0
+2025-02-24T16:41:04.641901Z (mocktime: 2025-02-24T16:37:14Z) [msghand] [net_processing.cpp:3380] [ProcessMessage] [net] received: ping (8 bytes) peer=0
+2025-02-24T16:41:04.641945Z (mocktime: 2025-02-24T16:37:14Z) [msghand] [net.cpp:3874] [PushMessage] [net] sending pong (8 bytes) peer=0
+
+-------------------
+self.wait_until(lambda: node.getorphantxs(verbosity=0) == [orphan["txid"]])
+2025-02-24T16:41:42.298210Z (mocktime: 2025-02-24T16:37:14Z) [http] [httpserver.cpp:306] [http_request_cb] [http] Received a POST request for / from 127.0.0.1:50963
+2025-02-24T16:41:42.298384Z (mocktime: 2025-02-24T16:37:14Z) [httpworker.2] [rpc/request.cpp:241] [parse] [rpc] ThreadRPCServer method=getorphantxs user=__cookie__
+
+-------------------
+node.bumpmocktime(NONPREF_PEER_TX_DELAY + TXID_RELAY_DELAY)
+2025-02-24T16:42:16.975871Z (mocktime: 2025-02-24T16:37:14Z) [http] [httpserver.cpp:306] [http_request_cb] [http] Received a POST request for / from 127.0.0.1:50963
+2025-02-24T16:42:16.976107Z (mocktime: 2025-02-24T16:37:14Z) [httpworker.9] [rpc/request.cpp:241] [parse] [rpc] ThreadRPCServer method=setmocktime user=__cookie__
+2025-02-24T16:42:17.016302Z (mocktime: 2025-02-24T16:37:18Z) [msghand] [node/txdownloadman_impl.cpp:282] [GetRequestsToSend] [net] Requesting tx 38335600f2465c0f8bb2b86d5830a34851d86fa879800c0e1434ddfc78c42898 peer=0
+2025-02-24T16:42:17.016417Z (mocktime: 2025-02-24T16:37:18Z) [msghand] [net.cpp:3874] [PushMessage] [net] sending getdata (37 bytes) peer=0
+
+-------------------
+node.sendrawtransaction(tx_replacer_BC["hex"])
+2025-02-24T16:43:02.408379Z (mocktime: 2025-02-24T16:37:18Z) [http] [httpserver.cpp:306] [http_request_cb] [http] Received a POST request for / from 127.0.0.1:50963
+2025-02-24T16:43:02.408670Z (mocktime: 2025-02-24T16:37:18Z) [httpworker.8] [rpc/request.cpp:241] [parse] [rpc] ThreadRPCServer method=sendrawtransaction user=__cookie__
+2025-02-24T16:43:02.412150Z (mocktime: 2025-02-24T16:37:18Z) [httpworker.8] [txmempool.cpp:700] [check] [mempool] Checking mempool with 1 transactions and 2 inputs
+2025-02-24T16:43:02.414426Z (mocktime: 2025-02-24T16:37:18Z) [httpworker.8] [validation.cpp:1322] [FinalizeSubpackage] [mempool] replacing mempool tx a9856f529aff13fcb1c3df5bb4249d45d466f4df885b255b3c84a1726e895b8b (wtxid=84df52eb64664912f81779452fa4e4dfe8c0edd261117c127a213b09034941fa, fees=2400, vsize=154). New tx 041d07eb1a542b2a3191b14f1d61245f2835cd7f758cbe2fb2e8f4cbe8b6f719 (wtxid=e5a9c4362a60ddce96d372a4b2ed694b47e0bb839aa561b224c2f1ce504afd21, fees=4800, vsize=154)
+2025-02-24T16:43:02.414603Z (mocktime: 2025-02-24T16:37:18Z) [httpworker.8] [validationinterface.cpp:208] [TransactionRemovedFromMempool] [validation] Enqueuing TransactionRemovedFromMempool: txid=a9856f529aff13fcb1c3df5bb4249d45d466f4df885b255b3c84a1726e895b8b wtxid=84df52eb64664912f81779452fa4e4dfe8c0edd261117c127a213b09034941fa reason=replaced
+2025-02-24T16:43:02.414703Z (mocktime: 2025-02-24T16:37:18Z) [httpworker.8] [txmempool.cpp:1074] [RemoveUnbroadcastTx] [mempool] Removed a9856f529aff13fcb1c3df5bb4249d45d466f4df885b255b3c84a1726e895b8b from set of unbroadcast txns before confirmation that txn was sent out
+2025-02-24T16:43:02.414773Z (mocktime: 2025-02-24T16:37:18Z) [scheduler] [validationinterface.cpp:208] [operator()] [validation] TransactionRemovedFromMempool: txid=a9856f529aff13fcb1c3df5bb4249d45d466f4df885b255b3c84a1726e895b8b wtxid=84df52eb64664912f81779452fa4e4dfe8c0edd261117c127a213b09034941fa reason=replaced
+2025-02-24T16:43:02.414952Z (mocktime: 2025-02-24T16:37:18Z) [httpworker.8] [validationinterface.cpp:198] [TransactionAddedToMempool] [validation] Enqueuing TransactionAddedToMempool: txid=041d07eb1a542b2a3191b14f1d61245f2835cd7f758cbe2fb2e8f4cbe8b6f719 wtxid=e5a9c4362a60ddce96d372a4b2ed694b47e0bb839aa561b224c2f1ce504afd21
+2025-02-24T16:43:02.415061Z (mocktime: 2025-02-24T16:37:18Z) [httpworker.8] [validation.cpp:1496] [AcceptSingleTransaction] [mempool] replaced 1 mempool transactions with 1 new transaction for 2400 additional fees, 0 delta bytes
+2025-02-24T16:43:02.415116Z (mocktime: 2025-02-24T16:37:18Z) [scheduler] [validationinterface.cpp:198] [operator()] [validation] TransactionAddedToMempool: txid=041d07eb1a542b2a3191b14f1d61245f2835cd7f758cbe2fb2e8f4cbe8b6f719 wtxid=e5a9c4362a60ddce96d372a4b2ed694b47e0bb839aa561b224c2f1ce504afd21
+2025-02-24T16:43:02.416607Z (mocktime: 2025-02-24T16:37:18Z) [httpworker.8] [txmempool.cpp:700] [check] [mempool] Checking mempool with 1 transactions and 2 inputs
+
+-------------------
+assert tx_replacer_BC["txid"] in node.getrawmempool()
+2025-02-24T16:43:35.110479Z (mocktime: 2025-02-24T16:37:18Z) [http] [httpserver.cpp:306] [http_request_cb] [http] Received a POST request for / from 127.0.0.1:50963
+2025-02-24T16:43:35.110764Z (mocktime: 2025-02-24T16:37:18Z) [httpworker.10] [rpc/request.cpp:241] [parse] [rpc] ThreadRPCServer method=getrawmempool user=__cookie__
+-------------------
+node.sendrawtransaction(tx_replacer_C["hex"])
+
+2025-02-24T16:44:18.804682Z (mocktime: 2025-02-24T16:37:18Z) [http] [httpserver.cpp:306] [http_request_cb] [http] Received a POST request for / from 127.0.0.1:50963
+2025-02-24T16:44:18.804956Z (mocktime: 2025-02-24T16:37:18Z) [httpworker.11] [rpc/request.cpp:241] [parse] [rpc] ThreadRPCServer method=sendrawtransaction user=__cookie__
+2025-02-24T16:44:18.807697Z (mocktime: 2025-02-24T16:37:18Z) [httpworker.11] [txmempool.cpp:700] [check] [mempool] Checking mempool with 1 transactions and 2 inputs
+2025-02-24T16:44:18.809589Z (mocktime: 2025-02-24T16:37:18Z) [httpworker.11] [validation.cpp:1322] [FinalizeSubpackage] [mempool] replacing mempool tx 041d07eb1a542b2a3191b14f1d61245f2835cd7f758cbe2fb2e8f4cbe8b6f719 (wtxid=e5a9c4362a60ddce96d372a4b2ed694b47e0bb839aa561b224c2f1ce504afd21, fees=4800, vsize=154). New tx 089a58d320b792a993bbeec93972b4d21609273d96384845d2ebe041fead0036 (wtxid=f9703119dfa3763ee5dc6a44e1fb74d4f0169cee9ec9a84fff374096e1e136e7, fees=31200, vsize=104)
+2025-02-24T16:44:18.809654Z (mocktime: 2025-02-24T16:37:18Z) [httpworker.11] [validationinterface.cpp:208] [TransactionRemovedFromMempool] [validation] Enqueuing TransactionRemovedFromMempool: txid=041d07eb1a542b2a3191b14f1d61245f2835cd7f758cbe2fb2e8f4cbe8b6f719 wtxid=e5a9c4362a60ddce96d372a4b2ed694b47e0bb839aa561b224c2f1ce504afd21 reason=replaced
+2025-02-24T16:44:18.809743Z (mocktime: 2025-02-24T16:37:18Z) [httpworker.11] [txmempool.cpp:1074] [RemoveUnbroadcastTx] [mempool] Removed 041d07eb1a542b2a3191b14f1d61245f2835cd7f758cbe2fb2e8f4cbe8b6f719 from set of unbroadcast txns before confirmation that txn was sent out
+2025-02-24T16:44:18.809796Z (mocktime: 2025-02-24T16:37:18Z) [scheduler] [validationinterface.cpp:208] [operator()] [validation] TransactionRemovedFromMempool: txid=041d07eb1a542b2a3191b14f1d61245f2835cd7f758cbe2fb2e8f4cbe8b6f719 wtxid=e5a9c4362a60ddce96d372a4b2ed694b47e0bb839aa561b224c2f1ce504afd21 reason=replaced
+2025-02-24T16:44:18.809870Z (mocktime: 2025-02-24T16:37:18Z) [httpworker.11] [validationinterface.cpp:198] [TransactionAddedToMempool] [validation] Enqueuing TransactionAddedToMempool: txid=089a58d320b792a993bbeec93972b4d21609273d96384845d2ebe041fead0036 wtxid=f9703119dfa3763ee5dc6a44e1fb74d4f0169cee9ec9a84fff374096e1e136e7
+2025-02-24T16:44:18.809929Z (mocktime: 2025-02-24T16:37:18Z) [httpworker.11] [validation.cpp:1496] [AcceptSingleTransaction] [mempool] replaced 1 mempool transactions with 1 new transaction for 26400 additional fees, -50 delta bytes
+2025-02-24T16:44:18.809975Z (mocktime: 2025-02-24T16:37:18Z) [scheduler] [validationinterface.cpp:198] [operator()] [validation] TransactionAddedToMempool: txid=089a58d320b792a993bbeec93972b4d21609273d96384845d2ebe041fead0036 wtxid=f9703119dfa3763ee5dc6a44e1fb74d4f0169cee9ec9a84fff374096e1e136e7
+2025-02-24T16:44:18.811232Z (mocktime: 2025-02-24T16:37:18Z) [httpworker.11] [txmempool.cpp:700] [check] [mempool] Checking mempool with 1 transactions and 1 inputs
+
+-------------------
+        assert tx_replacer_BC["txid"] not in node.getrawmempool()
+        assert parent_peekaboo_AB["txid"] not in node.getrawmempool()
+        assert tx_replacer_C["txid"] in node.getrawmempool()
+
+2025-02-24T16:44:55.433093Z (mocktime: 2025-02-24T16:37:18Z) [http] [httpserver.cpp:306] [http_request_cb] [http] Received a POST request for / from 127.0.0.1:50963
+2025-02-24T16:44:55.433291Z (mocktime: 2025-02-24T16:37:18Z) [httpworker.7] [rpc/request.cpp:241] [parse] [rpc] ThreadRPCServer method=getrawmempool user=__cookie__
+2025-02-24T16:44:56.452428Z (mocktime: 2025-02-24T16:37:18Z) [http] [httpserver.cpp:306] [http_request_cb] [http] Received a POST request for / from 127.0.0.1:50963
+2025-02-24T16:44:56.452689Z (mocktime: 2025-02-24T16:37:18Z) [httpworker.1] [rpc/request.cpp:241] [parse] [rpc] ThreadRPCServer method=getrawmempool user=__cookie__
+2025-02-24T16:44:57.261779Z (mocktime: 2025-02-24T16:37:18Z) [http] [httpserver.cpp:306] [http_request_cb] [http] Received a POST request for / from 127.0.0.1:50963
+2025-02-24T16:44:57.262135Z (mocktime: 2025-02-24T16:37:18Z) [httpworker.3] [rpc/request.cpp:241] [parse] [rpc] ThreadRPCServer method=getrawmempool user=__cookie__
+
+-------------------
+peer2 = node.add_p2p_connection(PeerTxRelayer())
+2025-02-24T16:45:33.466288Z (mocktime: 2025-02-24T16:37:18Z) [net] [net.cpp:3830] [CNode] [net] Added connection peer=1
+2025-02-24T16:45:33.466415Z (mocktime: 2025-02-24T16:37:18Z) [net] [net.cpp:1852] [CreateNodeFromAcceptedSocket] [net] connection from 127.0.0.1:51054 accepted
+2025-02-24T16:45:33.467484Z (mocktime: 2025-02-24T16:37:18Z) [msghand] [net_processing.cpp:3380] [ProcessMessage] [net] received: version (111 bytes) peer=1
+2025-02-24T16:45:33.467630Z (mocktime: 2025-02-24T16:37:18Z) [msghand] [net.cpp:3874] [PushMessage] [net] sending version (114 bytes) peer=1
+2025-02-24T16:45:33.467860Z (mocktime: 2025-02-24T16:37:18Z) [msghand] [net_processing.cpp:1515] [PushNodeVersion] [net] send version message: version 70016, blocks=370, txrelay=1, peer=1
+2025-02-24T16:45:33.467907Z (mocktime: 2025-02-24T16:37:18Z) [msghand] [net.cpp:3874] [PushMessage] [net] sending wtxidrelay (0 bytes) peer=1
+2025-02-24T16:45:33.468028Z (mocktime: 2025-02-24T16:37:18Z) [msghand] [net.cpp:3874] [PushMessage] [net] sending sendaddrv2 (0 bytes) peer=1
+2025-02-24T16:45:33.470602Z (mocktime: 2025-02-24T16:37:18Z) [msghand] [net.cpp:3874] [PushMessage] [net] sending verack (0 bytes) peer=1
+2025-02-24T16:45:33.470746Z (mocktime: 2025-02-24T16:37:18Z) [msghand] [net_processing.cpp:3580] [ProcessMessage] [net] receive version message: /python-p2p-tester:0.0.3/: version 70016, blocks=-1, us=127.0.0.1:11000, txrelay=1, peer=1
+2025-02-24T16:45:33.470990Z (mocktime: 2025-02-24T16:37:18Z) [msghand] [net_processing.cpp:3380] [ProcessMessage] [net] received: wtxidrelay (0 bytes) peer=1
+2025-02-24T16:45:33.471240Z (mocktime: 2025-02-24T16:37:18Z) [msghand] [net_processing.cpp:3380] [ProcessMessage] [net] received: verack (0 bytes) peer=1
+2025-02-24T16:45:33.471291Z (mocktime: 2025-02-24T16:37:18Z) [msghand] [net_processing.cpp:3625] [ProcessMessage] New inbound v1 peer connected: version: 70016, blocks=-1, peer=1
+2025-02-24T16:45:33.471332Z (mocktime: 2025-02-24T16:37:18Z) [msghand] [net.cpp:3874] [PushMessage] [net] sending sendcmpct (9 bytes) peer=1
+2025-02-24T16:45:33.471528Z (mocktime: 2025-02-24T16:37:18Z) [msghand] [net.cpp:3874] [PushMessage] [net] sending ping (8 bytes) peer=1
+2025-02-24T16:45:33.471784Z (mocktime: 2025-02-24T16:37:18Z) [msghand] [net.cpp:3874] [PushMessage] [net] sending getheaders (677 bytes) peer=1
+2025-02-24T16:45:33.471980Z (mocktime: 2025-02-24T16:37:18Z) [msghand] [net_processing.cpp:5508] [SendMessages] [net] initial getheaders (369) to peer=1 (startheight:-1)
+2025-02-24T16:45:33.472126Z (mocktime: 2025-02-24T16:37:18Z) [msghand] [net.cpp:3874] [PushMessage] [net] sending feefilter (8 bytes) peer=1
+2025-02-24T16:45:33.472374Z (mocktime: 2025-02-24T16:37:18Z) [msghand] [net_processing.cpp:3380] [ProcessMessage] [net] received: getaddr (0 bytes) peer=1
+2025-02-24T16:45:33.472981Z (mocktime: 2025-02-24T16:37:18Z) [msghand] [net_processing.cpp:3380] [ProcessMessage] [net] received: pong (8 bytes) peer=1
+2025-02-24T16:45:33.522222Z (mocktime: 2025-02-24T16:37:18Z) [msghand] [net_processing.cpp:3380] [ProcessMessage] [net] received: ping (8 bytes) peer=1
+2025-02-24T16:45:33.522399Z (mocktime: 2025-02-24T16:37:18Z) [msghand] [net.cpp:3874] [PushMessage] [net] sending pong (8 bytes) peer=1
+2025-02-24T16:45:33.522993Z (mocktime: 2025-02-24T16:37:18Z) [msghand] [net_processing.cpp:3380] [ProcessMessage] [net] received: ping (8 bytes) peer=1
+2025-02-24T16:45:33.523053Z (mocktime: 2025-02-24T16:37:18Z) [msghand] [net.cpp:3874] [PushMessage] [net] sending pong (8 bytes) peer=1
+2025-02-24T16:45:33.577743Z (mocktime: 2025-02-24T16:37:18Z) [http] [httpserver.cpp:306] [http_request_cb] [http] Received a POST request for / from 127.0.0.1:50963
+2025-02-24T16:45:33.578051Z (mocktime: 2025-02-24T16:37:18Z) [httpworker.15] [rpc/request.cpp:241] [parse] [rpc] ThreadRPCServer method=getpeerinfo user=__cookie__
+
+-------------------
+peer2.send_and_ping(msg_inv([orphan_inv]))
+2025-02-24T16:46:16.632619Z (mocktime: 2025-02-24T16:37:18Z) [msghand] [net_processing.cpp:3380] [ProcessMessage] [net] received: inv (37 bytes) peer=1
+2025-02-24T16:46:16.632837Z (mocktime: 2025-02-24T16:37:18Z) [msghand] [node/txdownloadman_impl.cpp:266] [MaybeAddOrphanResolutionCandidate] [txpackages] added peer=1 as a candidate for resolving orphan cc881cd6d310ebd95a60e35bed76fc57c304c46e0cfd6c5d7109632c48dbc99d
+2025-02-24T16:46:16.632902Z (mocktime: 2025-02-24T16:37:18Z) [msghand] [txorphanage.cpp:65] [AddAnnouncer] [txpackages] added peer=1 as announcer of orphan tx cc881cd6d310ebd95a60e35bed76fc57c304c46e0cfd6c5d7109632c48dbc99d
+2025-02-24T16:46:16.632935Z (mocktime: 2025-02-24T16:37:18Z) [msghand] [net_processing.cpp:3943] [ProcessMessage] [net] got inv: wtx cc881cd6d310ebd95a60e35bed76fc57c304c46e0cfd6c5d7109632c48dbc99d  have peer=1
+2025-02-24T16:46:16.633101Z (mocktime: 2025-02-24T16:37:18Z) [msghand] [net_processing.cpp:3380] [ProcessMessage] [net] received: ping (8 bytes) peer=1
+2025-02-24T16:46:16.633145Z (mocktime: 2025-02-24T16:37:18Z) [msghand] [net.cpp:3874] [PushMessage] [net] sending pong (8 bytes) peer=1
+2025-02-24T16:46:16.633395Z (mocktime: 2025-02-24T16:37:18Z) [msghand] [net_processing.cpp:3380] [ProcessMessage] [net] received: ping (8 bytes) peer=1
+2025-02-24T16:46:16.633432Z (mocktime: 2025-02-24T16:37:18Z) [msghand] [net.cpp:3874] [PushMessage] [net] sending pong (8 bytes) peer=1
+
+-------------------
+assert_equal(len(node.getorphantxs(verbosity=2)[0]["from"]), 2)
+2025-02-24T16:46:54.686801Z (mocktime: 2025-02-24T16:37:18Z) [http] [httpserver.cpp:306] [http_request_cb] [http] Received a POST request for / from 127.0.0.1:50963
+2025-02-24T16:46:54.686963Z (mocktime: 2025-02-24T16:37:18Z) [httpworker.12] [rpc/request.cpp:241] [parse] [rpc] ThreadRPCServer method=getorphantxs user=__cookie__
+-------------------
+peer1.peer_disconnect()
+2025-02-24T16:47:12.716199Z (mocktime: 2025-02-24T16:37:18Z) [net] [net.cpp:2189] [SocketHandlerConnected] [net] socket closed, disconnecting peer=0
+2025-02-24T16:47:12.716257Z (mocktime: 2025-02-24T16:37:18Z) [net] [net.cpp:565] [CloseSocketDisconnect] [net] Resetting socket for peer=0
+2025-02-24T16:47:12.717079Z (mocktime: 2025-02-24T16:37:18Z) [net] [net_processing.cpp:1633] [FinalizeNode] [net] Cleared nodestate for peer=0
+
+-------------------
+node.bumpmocktime(TXREQUEST_TIME_SKIP)
+2025-02-24T16:47:52.415055Z (mocktime: 2025-02-24T16:37:18Z) [http] [httpserver.cpp:306] [http_request_cb] [http] Received a POST request for / from 127.0.0.1:50963
+2025-02-24T16:47:52.415285Z (mocktime: 2025-02-24T16:37:18Z) [httpworker.13] [rpc/request.cpp:241] [parse] [rpc] ThreadRPCServer method=setmocktime user=__cookie__
+2025-02-24T16:47:52.507259Z (mocktime: 2025-02-24T16:37:25Z) [msghand] [node/txdownloadman_impl.cpp:282] [GetRequestsToSend] [net] Requesting tx a9856f529aff13fcb1c3df5bb4249d45d466f4df885b255b3c84a1726e895b8b peer=1
+2025-02-24T16:47:52.507333Z (mocktime: 2025-02-24T16:37:25Z) [msghand] [node/txdownloadman_impl.cpp:282] [GetRequestsToSend] [net] Requesting tx 38335600f2465c0f8bb2b86d5830a34851d86fa879800c0e1434ddfc78c42898 peer=1
+2025-02-24T16:47:52.507408Z (mocktime: 2025-02-24T16:37:25Z) [msghand] [net.cpp:3874] [PushMessage] [net] sending getdata (73 bytes) peer=1
+-------------------
+self.wait_until(lambda: len(node.getorphantxs(verbosity=2)[0]["from"]) == 1)
+2025-02-24T16:48:21.376834Z (mocktime: 2025-02-24T16:37:25Z) [http] [httpserver.cpp:306] [http_request_cb] [http] Received a POST request for / from 127.0.0.1:50963
+2025-02-24T16:48:21.376982Z (mocktime: 2025-02-24T16:37:25Z) [httpworker.14] [rpc/request.cpp:241] [parse] [rpc] ThreadRPCServer method=getorphantxs user=__cookie__
+-------------------
+peer2.wait_for_parent_requests([int(parent_peekaboo_AB["txid"], 16), int(parent_missing["txid"], 16)])
+no logs from node
+-------------------
+

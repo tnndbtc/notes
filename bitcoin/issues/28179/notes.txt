@@ -6,6 +6,45 @@ https://github.com/tnndbtc/notes/tree/main/bitcoin
 
 This one also shares the same fix for: https://github.com/bitcoin/bitcoin/issues/29098
 ----------------------------------
+2025-03-07
+[11:20:54 AM] <sipa> tnndbtc: i'm here
+[11:21:19 AM] <tnndbtc> Great, let me post my draft here:
+[11:21:19 AM] <tnndbtc> Let me see if I understand your proposal correctly:
+[11:21:19 AM] <tnndbtc> Originally, the performance degradation comes from:
+[11:21:19 AM] <tnndbtc> / fi
+[11:21:19 AM] <tnndbtc> ```
+[11:21:19 AM] <tnndbtc> for (size_t i = 0; i < node.keys.size(); ++i) {
+[11:21:19 AM] <tnndbtc>     ...
+[11:21:19 AM] <tnndbtc>     ...
+[11:21:19 AM] <tnndbtc>     for (size_t j = 1; j < sats.size(); ++j) next_sats.push_back((sats[j] + ZERO) | (std::move(sats[j - 1]) + sat));
+[11:21:19 AM] <tnndbtc> ```
+[11:21:19 AM] <tnndbtc> }
+[11:21:19 AM] <tnndbtc>     ...
+[11:22:04 AM] <sipa> tnndbtc: on IRC it's generally considered impolite to copy-paste text
+[11:22:37 AM] <sipa> but ok!
+[11:22:56 AM] <sipa> is it just due to the operator+ and operator| ?
+[11:24:12 AM] <tnndbtc> sipa I see.  Sorry.  Is there another way so we can ...
+[11:24:12 AM] <tnndbtc> Okay, the outer for loop is to go through available keys.  The problem is the inner for loop, which is to compare/sort out the optimal keys by operator |
+[11:24:59 AM] <tnndbtc> My understanding of your proposal is that to break out when we get k available keys, is my understanding right?
+[11:25:13 AM] <sipa> yes, it won't help for the 999-of-999 case
+[11:25:27 AM] <sipa> but there are other options
+[11:27:18 AM] <sipa> for example if k=n, there is no need to run this inner loop for anything other than j == sats.size() - 1
+[11:27:39 AM] <sipa> i think
+[11:29:55 AM] <sipa> the code currently builds an optimal witness for _every_ t-of-n, for all values of t, and then picks t=0 for dissatisfaction and t=k for satisfaction
+[11:30:06 AM] <sipa> all other t values go unused
+[11:30:48 AM] <sipa> based on the values of k and n, i think not all t values are always needed
+[11:31:01 AM] <tnndbtc> Then the challenge is to have a general implementation on this logic: we still want the inner loop to do compare/sort to achieve the optimization.  Then there are cases it will take long time, example, 998 out of 999.
+[11:31:01 AM] <tnndbtc> I see your point on other t values go unused.  Let me think...
+[11:32:28 AM] <sipa> though, i think the real slowdown is the fact that this is quadratically much work
+[11:32:57 AM] <sipa> oh, it may be cubic, and we can reduce it to quadratic for n-of-n
+[11:33:33 AM] <sipa> your approach is linear, but maybe quadratic suffices
+[11:36:09 AM] <tnndbtc> Yes, the real slowdown indeed is the quadratically much of work, when doing an additional sorting to get optimal size.
+[11:37:47 AM] <tnndbtc> for quadratic suffice on the linear approach, do you mean the size increases quadratically?
+[11:39:21 AM] <sipa> the amount of data produced is quadratic in size: for every t from 0 through n, a witness is produced that contains n elements
+[11:39:52 AM] <sipa> but i think the operator+ itself does linear work on itself, so the total amount of work is cubic
+[11:41:20 AM] <sipa> (lunch time, will be back after)
+[11:42:20 AM] <tnndbtc> Sure, last message just in case you are still here: in future, would we have keys much bigger than 999?  If so, quadratic approach would be a potential problem.
+----------------------------------
 Instruction on how to build on Mac Apple M1 chipset on Sequoia 15.1.1
 https://github.com/tnndbtc/notes/blob/main/bitcoin/build.txt
 Instruction on how to profile on Mac Apple M1 chipset on Sequoia 15.1.1

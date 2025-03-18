@@ -86,3 +86,8 @@ bitcoin-cli getconnectioncount
 bitcoind data folder:
 ~/Library/Application Support/Bitcoin
 ----------------------------------
+squash 3 commits into 1 commit:
+git reset --soft HEAD~3
+git commit # provide new commit message
+git push --force-with-lease origin fix-multi-sig-performance
+----------------------------------
