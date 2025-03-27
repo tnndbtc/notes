@@ -7,6 +7,10 @@ from https://github.com/bitcoin/bitcoin/actions/runs/12885576442/job/35924329366
 
 build/test/functional/test_runner.py test/functional/p2p_orphan_handling.py --tmpdir /tmp --nocleanup --timeout-factor=40 --quiet --failfast --v2transport
 ----------------------------------------------
+validation and credit is in:
+https://github.com/bitcoin/bitcoin/pull/32063
+https://github.com/bitcoin/bitcoin/pull/32092
+----------------------------------------------
 src/net.cpp: move DeleteNode(pnode) block within "LOCK(m_nodes_mutex);" will cause lock order violation, because in one thread, there is this lock order on-going:
 
 net_processing.cpp:1986 is locking "cs_main", and within this lock, it calls "m_connman.ForEachNode" which locks 'm_nodes_mutex' in net.h:1153
