@@ -1,0 +1,20 @@
+----------------------
+----------------------
+----------------------
+squash 3 commits into 1 commit:
+git reset --soft HEAD~3
+git commit # provide new commit message
+git push --force-with-lease origin fix-multi-sig-performance
+----------------------
+to rebase:
+git remote add upstream https://github.com/bitcoin/bitcoin.git
+git fetch upstream
+git checkout master
+git checkout <my_feature_branch>
+git rebase upstream/master
+----------------------
+to undo an unwanted push of a single file, find out previous or good version of that file: 6f9f415a4fa3a3c1dc87c207b0192a5ed0a91e0f in this case
+git checkout 6f9f415a4fa3a3c1dc87c207b0192a5ed0a91e0f doc/fuzzing.md
+git commit -am "Revert doc/fuzzing.md to previous version"
+git push
+
