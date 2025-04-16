@@ -296,6 +296,31 @@ Base64: JAEABTBrJvbAj5TZ
 root@64ee64269b01:/ci_container_base/ci/scratch/build-aarch64-unknown-linux-gnu/test/fuzz# 
 
 ----------------------------------
+(lldb) print node.k
+(const uint32_t) $1 = 1
+(lldb) print sats.size()
+(std::vector<miniscript::internal::InputStack, std::allocator<miniscript::internal::InputStack> >::size_type) $3 = 2
+(lldb) print sat_return.stack.size()
+(std::vector<std::vector<unsigned char, std::allocator<unsigned char> >, std::allocator<std::vector<unsigned char, std::allocator<unsigned char> > > >::size_type) $4 = 0
+(lldb) print sat_return
+(miniscript::internal::InputStack) $0 = {
+  available = NO
+  has_sig = false
+  malleable = false
+  non_canon = false
+  size = 18446744073709551615
+  stack = size=0 {}
+}
+(lldb) print sats[1]
+(std::vector<miniscript::internal::InputStack, std::allocator<miniscript::internal::InputStack> >::value_type) $2 = {
+  available = NO
+  has_sig = false
+  malleable = false
+  non_canon = false
+  size = 18446744073709551615
+  stack = size=0 {}
+}
+----------------------------------
 failed script on src/test/fuzz/miniscript.cpp
 to reproduce: 
 %docker exec -it ci_native_fuzz sh
