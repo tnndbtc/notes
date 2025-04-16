@@ -296,6 +296,10 @@ Base64: JAEABTBrJvbAj5TZ
 root@64ee64269b01:/ci_container_base/ci/scratch/build-aarch64-unknown-linux-gnu/test/fuzz# 
 
 ----------------------------------
+When sats.size() is different from sat_return.stack.size(), here is analysis:
+1) sats always starts with ZERO, so its size is never 0.
+2) sat_return.stack contains the real InputStack, which is different from the meaning of sats, which is a container of multiple InputStacks.  So, the sat_return.stack.size() could be greater or smaller than node.k
+
 (lldb) print node.k
 (const uint32_t) $1 = 1
 (lldb) print sats.size()
