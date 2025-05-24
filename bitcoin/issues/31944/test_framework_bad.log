@@ -1,0 +1,64 @@
+2025-05-22T16:10:26.182000Z TestFramework (INFO): User supplied random seed 2986529890161488286
+2025-05-22T16:10:26.182000Z TestFramework (INFO): PRNG seed is: 2986529890161488286
+2025-05-22T16:10:26.182000Z TestFramework (DEBUG): Setting up network thread
+2025-05-22T16:10:26.182000Z TestFramework (INFO): Initializing test directory /tmp/test_runner_₿_🏃_20250522_121026/feature_fee_estimation_0
+2025-05-22T16:10:26.182000Z TestFramework (DEBUG): Creating cache directory /Users/tnnd/data/code/bitcoin/build/test/cache/node0
+2025-05-22T16:10:26.185000Z TestFramework.node0 (DEBUG): bitcoind started, waiting for RPC to come up
+2025-05-22T16:10:26.705000Z TestFramework.node0 (DEBUG): RPC successfully started
+2025-05-22T16:10:26.709000Z TestFramework.node0 (DEBUG): RPC successfully started
+2025-05-22T16:10:27.767000Z TestFramework.node0 (DEBUG): Stopping node
+2025-05-22T16:10:27.988000Z TestFramework.node0 (DEBUG): Node stopped
+2025-05-22T16:10:27.989000Z TestFramework (DEBUG): Copy cache directory /Users/tnnd/data/code/bitcoin/build/test/cache/node0 to node 0
+2025-05-22T16:10:28.008000Z TestFramework (DEBUG): Copy cache directory /Users/tnnd/data/code/bitcoin/build/test/cache/node0 to node 1
+2025-05-22T16:10:28.022000Z TestFramework (DEBUG): Copy cache directory /Users/tnnd/data/code/bitcoin/build/test/cache/node0 to node 2
+2025-05-22T16:10:28.033000Z TestFramework (INFO): This test is time consuming, please be patient
+2025-05-22T16:10:28.033000Z TestFramework (INFO): Splitting inputs so we can generate tx's
+2025-05-22T16:10:28.035000Z TestFramework.node0 (DEBUG): bitcoind started, waiting for RPC to come up
+2025-05-22T16:10:28.554000Z TestFramework.node0 (DEBUG): RPC successfully started
+2025-05-22T16:10:28.886000Z TestFramework.node0 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:10:28.945000Z TestFramework (INFO): Finished splitting
+2025-05-22T16:10:28.947000Z TestFramework.node1 (DEBUG): bitcoind started, waiting for RPC to come up
+2025-05-22T16:10:29.204000Z TestFramework.node1 (DEBUG): RPC successfully started
+2025-05-22T16:10:29.206000Z TestFramework.node2 (DEBUG): bitcoind started, waiting for RPC to come up
+2025-05-22T16:10:29.463000Z TestFramework.node2 (DEBUG): RPC successfully started
+2025-05-22T16:10:29.752000Z TestFramework (INFO): Testing estimates with single transactions.
+2025-05-22T16:10:29.752000Z TestFramework (INFO): Will output estimates for 1/2/3/6/15/25 blocks
+2025-05-22T16:10:29.752000Z TestFramework (INFO): Creating transactions and mining them with a block size that can't keep up
+2025-05-22T16:10:30.112000Z TestFramework.node2 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:10:31.459000Z TestFramework.node2 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:10:31.860000Z TestFramework.node2 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:10:32.238000Z TestFramework.node2 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:10:32.631000Z TestFramework.node2 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:10:33.300000Z TestFramework.node2 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:10:33.882000Z TestFramework.node2 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:10:34.469000Z TestFramework.node2 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:10:35.008000Z TestFramework.node2 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:10:36.178000Z TestFramework.node2 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:10:36.212000Z TestFramework (ERROR): Key error
+Traceback (most recent call last):
+  File "/Users/tnnd/data/code/bitcoin/test/functional/test_framework/test_framework.py", line 182, in main
+    self.run_test()
+    ~~~~~~~~~~~~~^^
+  File "/Users/tnnd/data/code/bitcoin/build/test/functional/feature_fee_estimation.py", line 450, in run_test
+    self.sanity_check_estimates_range()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/tnnd/data/code/bitcoin/build/test/functional/feature_fee_estimation.py", line 224, in sanity_check_estimates_range
+    check_estimates(self.nodes[1], self.fees_per_kb)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/tnnd/data/code/bitcoin/build/test/functional/feature_fee_estimation.py", line 121, in check_estimates
+    check_raw_estimates(node, fees_seen)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/tnnd/data/code/bitcoin/build/test/functional/feature_fee_estimation.py", line 81, in check_raw_estimates
+    feerate = float(e["feerate"])
+                    ~^^^^^^^^^^^
+KeyError: 'feerate'
+2025-05-22T16:10:36.214000Z TestFramework (DEBUG): Closing down network thread
+2025-05-22T16:10:36.269000Z TestFramework (INFO): Not stopping nodes as test failed. The dangling processes will be cleaned up later.
+2025-05-22T16:10:36.269000Z TestFramework (WARNING): Not cleaning up dir /tmp/test_runner_₿_🏃_20250522_121026/feature_fee_estimation_0
+2025-05-22T16:10:36.269000Z TestFramework (ERROR): Test failed. Test logging available at /tmp/test_runner_₿_🏃_20250522_121026/feature_fee_estimation_0/test_framework.log
+2025-05-22T16:10:36.269000Z TestFramework (ERROR): 
+2025-05-22T16:10:36.270000Z TestFramework (ERROR): Hint: Call /Users/tnnd/data/code/bitcoin/test/functional/combine_logs.py '/tmp/test_runner_₿_🏃_20250522_121026/feature_fee_estimation_0' to consolidate all logs
+2025-05-22T16:10:36.270000Z TestFramework (ERROR): 
+2025-05-22T16:10:36.270000Z TestFramework (ERROR): If this failure happened unexpectedly or intermittently, please file a bug and provide a link or upload of the combined log.
+2025-05-22T16:10:36.270000Z TestFramework (ERROR): https://github.com/bitcoin/bitcoin/issues
+2025-05-22T16:10:36.270000Z TestFramework (ERROR): 

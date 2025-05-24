@@ -1,0 +1,167 @@
+2025-05-22T16:06:39.486000Z TestFramework (INFO): User supplied random seed 298652989016148828
+2025-05-22T16:06:39.487000Z TestFramework (INFO): PRNG seed is: 298652989016148828
+2025-05-22T16:06:39.487000Z TestFramework (DEBUG): Setting up network thread
+2025-05-22T16:06:39.487000Z TestFramework (INFO): Initializing test directory /tmp/test_runner_₿_🏃_20250522_120639/feature_fee_estimation_0
+2025-05-22T16:06:39.487000Z TestFramework (DEBUG): Creating cache directory /Users/tnnd/data/code/bitcoin/build/test/cache/node0
+2025-05-22T16:06:39.490000Z TestFramework.node0 (DEBUG): bitcoind started, waiting for RPC to come up
+2025-05-22T16:06:40.015000Z TestFramework.node0 (DEBUG): RPC successfully started
+2025-05-22T16:06:40.016000Z TestFramework.node0 (DEBUG): RPC successfully started
+2025-05-22T16:06:41.064000Z TestFramework.node0 (DEBUG): Stopping node
+2025-05-22T16:06:41.285000Z TestFramework.node0 (DEBUG): Node stopped
+2025-05-22T16:06:41.286000Z TestFramework (DEBUG): Copy cache directory /Users/tnnd/data/code/bitcoin/build/test/cache/node0 to node 0
+2025-05-22T16:06:41.301000Z TestFramework (DEBUG): Copy cache directory /Users/tnnd/data/code/bitcoin/build/test/cache/node0 to node 1
+2025-05-22T16:06:41.313000Z TestFramework (DEBUG): Copy cache directory /Users/tnnd/data/code/bitcoin/build/test/cache/node0 to node 2
+2025-05-22T16:06:41.324000Z TestFramework (INFO): This test is time consuming, please be patient
+2025-05-22T16:06:41.324000Z TestFramework (INFO): Splitting inputs so we can generate tx's
+2025-05-22T16:06:41.326000Z TestFramework.node0 (DEBUG): bitcoind started, waiting for RPC to come up
+2025-05-22T16:06:41.847000Z TestFramework.node0 (DEBUG): RPC successfully started
+2025-05-22T16:06:42.182000Z TestFramework.node0 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:06:42.241000Z TestFramework (INFO): Finished splitting
+2025-05-22T16:06:42.243000Z TestFramework.node1 (DEBUG): bitcoind started, waiting for RPC to come up
+2025-05-22T16:06:42.500000Z TestFramework.node1 (DEBUG): RPC successfully started
+2025-05-22T16:06:42.502000Z TestFramework.node2 (DEBUG): bitcoind started, waiting for RPC to come up
+2025-05-22T16:06:42.759000Z TestFramework.node2 (DEBUG): RPC successfully started
+2025-05-22T16:06:43.045000Z TestFramework (INFO): Testing estimates with single transactions.
+2025-05-22T16:06:43.045000Z TestFramework (INFO): Will output estimates for 1/2/3/6/15/25 blocks
+2025-05-22T16:06:43.045000Z TestFramework (INFO): Creating transactions and mining them with a block size that can't keep up
+2025-05-22T16:06:43.405000Z TestFramework.node2 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:06:44.904000Z TestFramework.node2 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:06:45.531000Z TestFramework.node2 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:06:45.952000Z TestFramework.node2 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:06:46.486000Z TestFramework.node2 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:06:47.140000Z TestFramework.node2 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:06:48.021000Z TestFramework.node2 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:06:49.056000Z TestFramework.node2 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:06:49.777000Z TestFramework.node2 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:06:50.616000Z TestFramework.node2 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:06:50.721000Z TestFramework (INFO): Creating transactions and mining them at a block size that is just big enough
+2025-05-22T16:06:51.457000Z TestFramework.node1 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:06:53.445000Z TestFramework.node1 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:06:54.835000Z TestFramework.node1 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:06:55.682000Z TestFramework.node1 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:06:56.714000Z TestFramework.node1 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:06:57.949000Z TestFramework.node1 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:06:58.833000Z TestFramework.node1 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:07:00.259000Z TestFramework.node1 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:07:01.535000Z TestFramework.node1 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:07:03.172000Z TestFramework.node1 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:07:03.291000Z TestFramework (INFO): Creating transactions and mining them with a block size that can't keep up
+2025-05-22T16:07:04.503000Z TestFramework.node2 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:07:05.572000Z TestFramework.node2 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:07:07.466000Z TestFramework.node2 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:07:08.964000Z TestFramework.node2 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:07:10.463000Z TestFramework.node2 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:07:11.872000Z TestFramework.node2 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:07:14.285000Z TestFramework.node2 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:07:16.915000Z TestFramework.node2 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:07:20.178000Z TestFramework.node2 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:07:22.203000Z TestFramework.node2 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:07:22.338000Z TestFramework (INFO): Creating transactions and mining them at a block size that is just big enough
+2025-05-22T16:07:25.016000Z TestFramework.node1 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:07:28.121000Z TestFramework.node1 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:07:31.288000Z TestFramework.node1 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:07:33.079000Z TestFramework.node1 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:07:36.395000Z TestFramework.node1 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:07:38.480000Z TestFramework.node1 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:07:40.931000Z TestFramework.node1 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:07:42.650000Z TestFramework.node1 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:07:46.484000Z TestFramework.node1 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:07:49.813000Z TestFramework.node1 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:07:49.974000Z TestFramework.node1 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:07:50.046000Z TestFramework.node1 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:07:50.115000Z TestFramework.node1 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:07:50.179000Z TestFramework.node1 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:07:50.240000Z TestFramework.node1 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:07:50.297000Z TestFramework.node1 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:07:50.351000Z TestFramework.node1 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:07:50.401000Z TestFramework.node1 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:07:50.447000Z TestFramework.node1 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:07:50.489000Z TestFramework.node1 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:07:50.528000Z TestFramework.node1 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:07:50.563000Z TestFramework.node1 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:07:50.594000Z TestFramework.node1 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:07:50.622000Z TestFramework.node1 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:07:50.644000Z TestFramework (INFO): Final estimates after emptying mempools
+2025-05-22T16:07:50.723000Z TestFramework (INFO): Test fee_estimates.dat is flushed periodically
+2025-05-22T16:07:50.766000Z TestFramework.node0 (DEBUG): Stopping node
+2025-05-22T16:07:50.987000Z TestFramework.node0 (DEBUG): Node stopped
+2025-05-22T16:07:50.989000Z TestFramework.node0 (DEBUG): bitcoind started, waiting for RPC to come up
+2025-05-22T16:07:51.508000Z TestFramework.node0 (DEBUG): RPC successfully started
+2025-05-22T16:07:51.509000Z TestFramework.node0 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:07:51.600000Z TestFramework.node0 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:07:51.632000Z TestFramework.node0 (DEBUG): Stopping node
+2025-05-22T16:07:51.853000Z TestFramework.node0 (DEBUG): Node stopped
+2025-05-22T16:07:51.856000Z TestFramework.node0 (DEBUG): bitcoind started, waiting for RPC to come up
+2025-05-22T16:07:52.377000Z TestFramework.node0 (DEBUG): RPC successfully started
+2025-05-22T16:07:52.378000Z TestFramework (INFO): Test fee rate estimation after restarting node with high MempoolMinFee
+2025-05-22T16:07:52.380000Z TestFramework.node1 (DEBUG): Stopping node
+2025-05-22T16:07:52.547000Z TestFramework.node1 (DEBUG): Node stopped
+2025-05-22T16:07:52.549000Z TestFramework.node1 (DEBUG): bitcoind started, waiting for RPC to come up
+2025-05-22T16:07:53.065000Z TestFramework.node1 (DEBUG): RPC successfully started
+2025-05-22T16:07:53.181000Z TestFramework.node1 (DEBUG): Stopping node
+2025-05-22T16:07:53.347000Z TestFramework.node1 (DEBUG): Node stopped
+2025-05-22T16:07:53.349000Z TestFramework.node1 (DEBUG): bitcoind started, waiting for RPC to come up
+2025-05-22T16:07:53.867000Z TestFramework.node1 (DEBUG): RPC successfully started
+2025-05-22T16:07:53.867000Z TestFramework (INFO): Test acceptstalefeeestimates option
+2025-05-22T16:07:53.869000Z TestFramework.node0 (DEBUG): Stopping node
+2025-05-22T16:07:54.035000Z TestFramework.node0 (DEBUG): Node stopped
+2025-05-22T16:07:54.039000Z TestFramework.node0 (DEBUG): bitcoind started, waiting for RPC to come up
+2025-05-22T16:07:54.558000Z TestFramework.node0 (DEBUG): RPC successfully started
+2025-05-22T16:07:54.561000Z TestFramework (INFO): Test reading old fee_estimates.dat
+2025-05-22T16:07:54.563000Z TestFramework.node0 (DEBUG): Stopping node
+2025-05-22T16:07:54.727000Z TestFramework.node0 (DEBUG): Node stopped
+2025-05-22T16:07:54.729000Z TestFramework.node0 (DEBUG): bitcoind started, waiting for RPC to come up
+2025-05-22T16:07:55.249000Z TestFramework.node0 (DEBUG): RPC successfully started
+2025-05-22T16:07:55.252000Z TestFramework.node0 (DEBUG): Stopping node
+2025-05-22T16:07:55.415000Z TestFramework.node0 (DEBUG): Node stopped
+2025-05-22T16:07:55.419000Z TestFramework.node0 (DEBUG): bitcoind started, waiting for RPC to come up
+2025-05-22T16:07:55.937000Z TestFramework.node0 (DEBUG): RPC successfully started
+2025-05-22T16:07:55.939000Z TestFramework (INFO): Restarting node with fresh estimation
+2025-05-22T16:07:55.939000Z TestFramework.node0 (DEBUG): Stopping node
+2025-05-22T16:07:56.104000Z TestFramework.node0 (DEBUG): Node stopped
+2025-05-22T16:07:56.107000Z TestFramework.node0 (DEBUG): bitcoind started, waiting for RPC to come up
+2025-05-22T16:07:56.626000Z TestFramework.node0 (DEBUG): RPC successfully started
+2025-05-22T16:07:57.856000Z TestFramework (INFO): Testing estimates with RBF.
+2025-05-22T16:07:58.142000Z TestFramework.node1 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:07:59.853000Z TestFramework.node1 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:08:00.520000Z TestFramework.node1 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:08:01.204000Z TestFramework.node1 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:08:01.892000Z TestFramework.node1 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:08:02.249000Z TestFramework.node1 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:08:02.267000Z TestFramework (INFO): Restarting node with fresh estimation
+2025-05-22T16:08:02.267000Z TestFramework.node0 (DEBUG): Stopping node
+2025-05-22T16:08:02.486000Z TestFramework.node0 (DEBUG): Node stopped
+2025-05-22T16:08:02.489000Z TestFramework.node0 (DEBUG): bitcoind started, waiting for RPC to come up
+2025-05-22T16:08:03.005000Z TestFramework.node0 (DEBUG): RPC successfully started
+2025-05-22T16:08:03.218000Z TestFramework (INFO): Test estimatesmartfee modes
+2025-05-22T16:08:04.385000Z TestFramework.node2 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:08:06.613000Z TestFramework.node2 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:08:07.808000Z TestFramework.node2 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:08:09.015000Z TestFramework.node2 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:08:10.206000Z TestFramework.node2 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:08:11.392000Z TestFramework.node2 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:08:12.558000Z TestFramework.node2 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:08:13.752000Z TestFramework.node2 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:08:14.947000Z TestFramework.node2 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:08:16.140000Z TestFramework.node2 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:08:17.335000Z TestFramework.node2 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:08:18.531000Z TestFramework.node2 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:08:19.732000Z TestFramework.node2 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:08:20.927000Z TestFramework.node2 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:08:22.121000Z TestFramework.node2 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:08:23.311000Z TestFramework.node2 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-05-22T16:08:23.352000Z TestFramework (INFO): Testing that fee estimation is disabled in blocksonly.
+2025-05-22T16:08:23.352000Z TestFramework.node0 (DEBUG): Stopping node
+2025-05-22T16:08:23.573000Z TestFramework.node0 (DEBUG): Node stopped
+2025-05-22T16:08:23.577000Z TestFramework.node0 (DEBUG): bitcoind started, waiting for RPC to come up
+2025-05-22T16:08:24.095000Z TestFramework.node0 (DEBUG): RPC successfully started
+2025-05-22T16:08:24.100000Z TestFramework (DEBUG): Closing down network thread
+2025-05-22T16:08:24.153000Z TestFramework (INFO): Stopping nodes
+2025-05-22T16:08:24.153000Z TestFramework.node0 (DEBUG): Stopping node
+2025-05-22T16:08:24.156000Z TestFramework.node1 (DEBUG): Stopping node
+2025-05-22T16:08:24.158000Z TestFramework.node2 (DEBUG): Stopping node
+2025-05-22T16:08:24.270000Z TestFramework.node0 (DEBUG): Node stopped
+2025-05-22T16:08:24.325000Z TestFramework.node1 (DEBUG): Node stopped
+2025-05-22T16:08:24.325000Z TestFramework.node2 (DEBUG): Node stopped
+2025-05-22T16:08:24.325000Z TestFramework (WARNING): Not cleaning up dir /tmp/test_runner_₿_🏃_20250522_120639/feature_fee_estimation_0
+2025-05-22T16:08:24.325000Z TestFramework (INFO): Tests successful

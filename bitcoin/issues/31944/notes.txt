@@ -1,0 +1,83 @@
+------------------------
+@maflcko @ismaelsadeeq
+
+I dug further into this test failure in bitcoind process and found following:
+When test fails, it's because TxConfirmStats::EstimateMedianVal (in src/policy/fees.cpp) has gone into the error path:
+
+double curPct = nConf / (totalNum + failNum + extraNum);
+// Check to see if we are no longer getting confirmed at the success rate
+if (curPct < successBreakPoint) {
+// error path
+}
+else {
+// happy path
+}
+
+At this particular test case, curPct is 0.92371745878662281 and fall below successBreakPoint (0.94999999999999996)
+This is because extraNum (14) has dragged the current percentage down
+(lldb) fr v curPct successBreakPoint nConf totalNum failNum extraNum
+(double) curPct = 0.92371745878662281
+(double) successBreakPoint = 0.94999999999999996 // calculated by curPct = nConf / (totalNum + failNum + extraNum);
+(double) nConf = 169.52823303092737
+(double) totalNum = 169.52823303092737
+(double) failNum = 0
+(int) extraNum = 14
+
+In happy path during the test, extraNum is small, and failNum is 0, so curPct is bigger than expected successBreakPoint (0.94999999999999996)
+
+In reality, extraNum could be a larger number as there might be more unconfirmed transactions in mempool, so I believe a lower than expected success break point is a real scenario. Therefore, the expectation that it always returns a greater than 0 feerate in check_raw_estimates in test/functional/feature_fee_estimation.py does not always hold true.
+feerate = float(e["feerate"])
+assert_greater_than(feerate, 0)
+
+So, I would suggest we simply log a message when feerate does not exist in check_raw_estimates and continue the test.
+
+What do you think?
+
+Include more logs from debug.out in node1 which shows the failed messages:
+
+feature_fee_estimation_0/node1/regtest/debug.out
+2025-04-03T20:35:00.810609Z [httpworker.10] [policy/fees.cpp:398] [EstimateMedianVal] [estimatefee] FeeEst: 1 > 95% decay 0.96200: feerate: 366047 from (348912 - 424105) 100.00% 18.8/(18.8 0 mem 0.0 out) Fail: (301403 - 348912) 77.41% 24.0/(24.0 7 mem 0.0 out)
+2025-04-03T20:35:00.810971Z [httpworker.10] [policy/fees.cpp:398] [EstimateMedianVal] [estimatefee] FeeEst: 1 > 95% decay 0.99520: feerate: 435306 from (384675 - 515502) 100.00% 23.6/(23.6 0 mem 0.0 out) Fail: (301403 - 384675) 87.01% 46.9/(46.9 7 mem 0.0 out)
+2025-04-03T20:35:00.815082Z [httpworker.10] [policy/fees.cpp:398] [EstimateMedianVal] [estimatefee] FeeEst: 1 > 95% decay 0.99931: feerate: -1 from (-1 - -1) 0.00% 0.0/(0.0 0 mem 0.0 out) Fail: (301403 - 1e+99) 92.37% 169.5/(169.5 14 mem 0.0 out)
+------------------------
+watchpoint modify -c "extraNum > 0"
+------------------------
+when curPct >= successBreakPoint
+(lldb) fr v curPct successBreakPoint nConf totalNum failNum extraNum
+(double) curPct = 1
+(double) successBreakPoint = 0.94999999999999996
+(double) nConf = 44.977900059298378
+(double) totalNum = 44.977900059298378
+(double) failNum = 0
+(int) extraNum = 0
+
+when curPct < successBreakPoint
+1st loop:
+(lldb) fr v curPct successBreakPoint nConf totalNum failNum extraNum
+(double) curPct = 0.92371745878662281
+(double) successBreakPoint = 0.94999999999999996
+(double) nConf = 169.52823303092737
+(double) totalNum = 169.52823303092737
+(double) failNum = 0
+(int) extraNum = 14
+
+2nd loop:
+(lldb) fr v curPct successBreakPoint nConf totalNum failNum extraNum
+(double) curPct = 0.82609092914711856
+(double) successBreakPoint = 0.94999999999999996
+(double) nConf = 323.0089316590317
+(double) totalNum = 323.0089316590317
+(double) failNum = 0
+(int) extraNum = 68
+------------------------
+src/policy/fees.cpp: TxConfirmStats::EstimateMedianVal
+------------------------
+in node1:
+
+{'decay': Decimal('0.99931'), 'errors': ['Insufficient data or no feerate found which meets threshold'], 'fail': {'endrange': Decimal('1E+99'), 'inmempool': 14, 'leftmempool': 0, 'startrange': 301403, 'totalconfirmed': Decimal('169.53'), 'withintarget': Decimal('169.53')}, 'scale': 24}
+
+feature_fee_estimation_0/node1/regtest/debug.out
+2025-04-03T20:35:00.810609Z [httpworker.10] [policy/fees.cpp:398] [EstimateMedianVal] [estimatefee] FeeEst: 1 > 95% decay 0.96200: feerate: 366047 from (348912 - 424105) 100.00% 18.8/(18.8 0 mem 0.0 out) Fail: (301403 - 348912) 77.41% 24.0/(24.0 7 mem 0.0 out)
+2025-04-03T20:35:00.810971Z [httpworker.10] [policy/fees.cpp:398] [EstimateMedianVal] [estimatefee] FeeEst: 1 > 95% decay 0.99520: feerate: 435306 from (384675 - 515502) 100.00% 23.6/(23.6 0 mem 0.0 out) Fail: (301403 - 384675) 87.01% 46.9/(46.9 7 mem 0.0 out)
+2025-04-03T20:35:00.815082Z [httpworker.10] [policy/fees.cpp:398] [EstimateMedianVal] [estimatefee] FeeEst: 1 > 95% decay 0.99931: feerate: -1 from (-1 - -1) 0.00% 0.0/(0.0 0 mem 0.0 out) Fail: (301403 - 1e+99) 92.37% 169.5/(169.5 14 mem 0.0 out)
+

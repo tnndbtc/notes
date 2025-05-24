@@ -1,5 +1,8 @@
 ----------------------
 ----------------------
+To make print work in def set_test_params in unit test while self.log is not initialized yet:
+        sys.stdout = open('/dev/tty', 'w')
+        print("DEBUG set_test_params")
 ----------------------
 squash 3 commits into 1 commit:
 git reset --soft HEAD~3
