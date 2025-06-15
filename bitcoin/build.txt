@@ -88,6 +88,10 @@ to connect to functional test node:
 rpcport can be found in /tmp/test_runner_₿_🏃_20250528_194810/feature_fee_estimation_0/node1/bitcoin.conf (rpcport=16001)
 rpcuser and cookie value can be found at:
 /tmp/test_runner_₿_🏃_20250528_194810/feature_fee_estimation_0/node1/regtest/.cookie
+or, on mainnet, it can be found at:
+-datadir=/Users/user/tmp/bitcoin_data
+as /Users/user/tmp/bitcoin_data/.cookie
+build/bin/bitcoind -datadir=/Users/user/tmp/bitcoin_data -debug=all -blocksonly=1 -debuglogfile=/Users/user/tmp/bitcoin_data/debug.log -conf=/Users/user/tmp/bitcoin_data/bitcoin.conf
 ----------------------------------
 bitcoind data folder:
 ~/Library/Application Support/Bitcoin
