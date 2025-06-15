@@ -5,6 +5,9 @@ To make print work in def set_test_params in unit test while self.log is not ini
         print("DEBUG set_test_params")
 ----------------------
 squash 3 commits into 1 commit:
+git add <files>
+git commit -m "some comments"
+...
 git reset --soft HEAD~3
 git commit # provide new commit message
 git push --force-with-lease origin fix-multi-sig-performance

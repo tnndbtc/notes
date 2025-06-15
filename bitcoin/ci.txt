@@ -4,6 +4,9 @@ Download docker:
 
 https://docs.docker.com/desktop/setup/install/mac-install/
 ----------------
+run lint test: 
+% DOCKER_BUILDKIT=1 docker build -t bitcoin-linter --file "./ci/lint_imagefile" ./ && docker run --rm -v $(pwd):/bitcoin -it bitcoin-linter
+----------------
 Fix ci/test/02_run_container.sh
 replace "tee --append" by "tee -a"
 

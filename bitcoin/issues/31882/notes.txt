@@ -1,0 +1,615 @@
+----------------------
+git log -1 --oneline
+
+f94167512d (HEAD -> master, origin/master, origin/HEAD) Merge bitcoin/bitcoin#32676: test: apply microsecond precision to test framework logging
+
+----------------------
+For the past several days, I have run the test based on the input provided, and it typically finishes the InitialBlockDownload within 3 hours.  Tested multiple times.
+
+Snapshot downloaded: https://bitcoin-snapshots.jaonoctus.dev/
+Block Height: 891,749 on Mainnet
+
+For one particular test result: blocks downloaded before InitialBlockDownload turn to false: 9563
+total time: 162 mins (2h 42m)
+
+build configuration, Debug build:
+cmake -B build -DENABLE_WALLET=ON -DCMAKE_CXX_COMPILER=/opt/homebrew/opt/llvm@16/bin/clang++ -DCMAKE_C_COMPILER=/opt/homebrew/opt/llvm@16/bin/clang -DCMAKE_BUILD_TYPE=Debug
+
+run as daemon: because I need to create a pid file to rotate debug.out file due to small disk
+bitcoin.conf used:
+# --------------------------
+# General Settings
+# --------------------------
+
+server=1                   # Enable RPC server
+daemon=1                   # Run as daemon (Linux/Unix)
+pid=/Users/<user>/tmp/bitcoin_data/bitcoind.pid
+datadir=/Users/<user>/tmp/bitcoin_data
+rpcbind=127.0.0.1          # Only listen for RPC on localhost
+rpcallowip=127.0.0.1       # Only allow RPC from localhost
+rpcport=8332               # Default RPC port
+prune=550                 # Keep ~550 MB of the most recent blockchain data
+dbcache=2048               # Memory cache size in MB (default is 300)
+
+commit hash: f94167512d on master branch
+
+CPU: 200% - 400% 8 cores, so average 25% - 50% CPU utilization for bitcoind process
+
+MacOS: Sequoia 15.1.1
+Physical Memory: 16GB
+CPUs: 8, Apple M1 chipset
+Hard drive: SSD
+
+Internet speed, in a spot has slower internet access:
+download: 54 Mbps (Megabits, not bytes)
+upload: 53 Mbps
+
+Commands used:
+# to start bitcoind as daemon
+% build/bin/bitcoind -datadir=/Users/<user>/tmp/bitcoin_data -debug=all -blocksonly=1 -debuglogfile=/Users/<user>/tmp/bitcoin_data/debug.log -conf=/Users/<user>/tmp/bitcoin_data/bitcoin.conf
+
+% ./build/bin/bitcoin-cli -rpcport=8332 -rpcuser=__cookie__ -rpcpassword=<cookie> getblockchaininfo
+
+23:30:
+{
+  "chain": "main",
+  "blocks": 901312,
+  "headers": 901312,
+  "bestblockhash": "00000000000000000000e3eb2c88359adaf3ed509d488577583a37ed4371eaba",
+  "bits": "17023a04",
+  "target": "000000000000000000023a040000000000000000000000000000000000000000",
+  "difficulty": 126411437451912.2,
+  "time": 1749957611,
+  "mediantime": 1749953913,
+  "verificationprogress": 1,
+  "initialblockdownload": false,
+  "chainwork": "0000000000000000000000000000000000000000cb0b7c1ebd4e3b33e700bb6c",
+  "size_on_disk": 618018566,
+  "pruned": true,
+  "pruneheight": 900926,
+  "automatic_pruning": true,
+  "prune_target_size": 576716800,
+  "warnings": [
+    "This is a pre-release test build - use at your own risk - do not use for mining or merchant applications"
+  ]
+}
+
+23:29:
+{
+  "chain": "main",
+  "blocks": 901260,
+  "headers": 901312,
+  "bestblockhash": "00000000000000000001a77550a8e9f92b328d4192033dc643c3fbef1da1fbe6",
+  "bits": "17023a04",
+  "target": "000000000000000000023a040000000000000000000000000000000000000000",
+  "difficulty": 126411437451912.2,
+  "time": 1749932638,
+  "mediantime": 1749929493,
+  "verificationprogress": 0.9999017436415516,
+  "initialblockdownload": false,
+  "chainwork": "0000000000000000000000000000000000000000caf4218fa7da8213f765387c",
+  "size_on_disk": 607775340,
+  "pruned": true,
+  "pruneheight": 900926,
+  "automatic_pruning": true,
+  "prune_target_size": 576716800,
+  "warnings": [
+    "This is a pre-release test build - use at your own risk - do not use for mining or merchant applications"
+  ]
+}
+
+
+22:46
+{
+  "chain": "main",
+  "blocks": 898601,
+  "headers": 901307,
+  "bestblockhash": "0000000000000000000199440ba46bebd53ba6a22f66a72acc053ffa8bf3fba9",
+  "bits": "17025049",
+  "target": "0000000000000000000250490000000000000000000000000000000000000000",
+  "difficulty": 121658450774825,
+  "time": 1748345349,
+  "mediantime": 1748342447,
+  "verificationprogress": 0.9938167703170699,
+  "initialblockdownload": true,
+  "chainwork": "0000000000000000000000000000000000000000c64edffafe0d780aadc88a0e",
+  "size_on_disk": 798751464,
+  "pruned": true,
+  "pruneheight": 898236,
+  "automatic_pruning": true,
+  "prune_target_size": 576716800,
+  "warnings": [
+    "This is a pre-release test build - use at your own risk - do not use for mining or merchant applications"
+  ]
+}
+20:48 start
+{
+  "chain": "main",
+  "blocks": 891749,
+  "headers": 893748,
+  "bestblockhash": "00000000000000000002201c70f1553b97aa9668351296699753508a1a3d4303",
+  "bits": "17025105",
+  "target": "0000000000000000000251050000000000000000000000000000000000000000",
+  "difficulty": 121507793131898.1,
+  "time": 1744268661,
+  "mediantime": 1744266591,
+  "verificationprogress": 0.9781761415242707,
+  "initialblockdownload": true,
+  "chainwork": "0000000000000000000000000000000000000000bac4e94bfda4dc31cd75aa04",
+  "size_on_disk": 467877742,
+  "pruned": true,
+  "pruneheight": 891453,
+  "automatic_pruning": true,
+  "prune_target_size": 576716800,
+  "warnings": [
+    "This is a pre-release test build - use at your own risk - do not use for mining or merchant applications"
+  ]
+}
+----------------------
+day 1, finish in 2 hrs 24 minutes
+run as daemon
+
+CPU: 150% - 300%, 8 cores
+Memory: 16GB
+dbcache: 2048MB
+daemon: 1
+blocks: 9542
+
+Done: 20:26
+{
+  "chain": "main",
+  "blocks": 901291,
+  "headers": 901291,
+  "bestblockhash": "000000000000000000016c66379d0f30d54cc3cffafe162aae18cd404afe91ad",
+  "bits": "17023a04",
+  "target": "000000000000000000023a040000000000000000000000000000000000000000",
+  "difficulty": 126411437451912.2,
+  "time": 1749947555,
+  "mediantime": 1749943197,
+  "verificationprogress": 1,
+  "initialblockdownload": false,
+  "chainwork": "0000000000000000000000000000000000000000cb020db3b990ba4977781550",
+  "size_on_disk": 593794625,
+  "pruned": true,
+  "pruneheight": 900916,
+  "automatic_pruning": true,
+  "prune_target_size": 576716800,
+  "warnings": [
+    "This is a pre-release test build - use at your own risk - do not use for mining or merchant applications"
+  ]
+}
+
+day 1, 20:22
+{
+  "chain": "main",
+  "blocks": 900908,
+  "headers": 901290,
+  "bestblockhash": "000000000000000000010515dfa69a4938f1ff2dc06b3fcc4f815e3ebd5e8f98",
+  "bits": "17023774",
+  "target": "0000000000000000000237740000000000000000000000000000000000000000",
+  "difficulty": 126982285146989.3,
+  "time": 1749719744,
+  "mediantime": 1749717097,
+  "verificationprogress": 0.9991270375702297,
+  "initialblockdownload": true,
+  "chainwork": "0000000000000000000000000000000000000000ca558d271bc9f1430688226c",
+  "size_on_disk": 629976574,
+  "pruned": true,
+  "pruneheight": 900556,
+  "automatic_pruning": true,
+  "prune_target_size": 576716800,
+  "warnings": [
+    "This is a pre-release test build - use at your own risk - do not use for mining or merchant applications"
+  ]
+}
+day 1, 19:45
+{
+  "chain": "main",
+  "blocks": 898292,
+  "headers": 901289,
+  "bestblockhash": "00000000000000000001ad82cf0ad9303674e6720f7d7a6ceb523020d287c678",
+  "bits": "17025049",
+  "target": "0000000000000000000250490000000000000000000000000000000000000000",
+  "difficulty": 121658450774825,
+  "time": 1748172423,
+  "mediantime": 1748169210,
+  "verificationprogress": 0.9931944869777052,
+  "initialblockdownload": true,
+  "chainwork": "0000000000000000000000000000000000000000c5c9515079ff7b7f02772da7",
+  "size_on_disk": 770221956,
+  "pruned": true,
+  "pruneheight": 897946,
+  "automatic_pruning": true,
+  "prune_target_size": 576716800,
+  "warnings": [
+    "This is a pre-release test build - use at your own risk - do not use for mining or merchant applications"
+  ]
+}
+day 1, 18:02 started
+{
+  "chain": "main",
+  "blocks": 891770,
+  "headers": 897748,
+  "bestblockhash": "000000000000000000020475485dffda44e3392cc22ac87ddf1724283906360c",
+  "bits": "17025105",
+  "target": "0000000000000000000251050000000000000000000000000000000000000000",
+  "difficulty": 121507793131898.1,
+  "time": 1744281689,
+  "mediantime": 1744277798,
+  "verificationprogress": 0.9782634437963293,
+  "initialblockdownload": true,
+  "chainwork": "0000000000000000000000000000000000000000bacdfa0e8c3141c1911aa6e2",
+  "size_on_disk": 499687564,
+  "pruned": true,
+  "pruneheight": 891453,
+  "automatic_pruning": true,
+  "prune_target_size": 576716800,
+  "warnings": [
+    "This is a pre-release test build - use at your own risk - do not use for mining or merchant applications"
+  ]
+}
+----------------------
+on ~/tmp/bitcoin_data, local disk
+day 1, 17:21 - 17:30
+{
+  "chain": "main",
+  "blocks": 900226,
+  "headers": 901128,
+  "bestblockhash": "0000000000000000000191c99ed7644a0b389dcdbbb470a9556609214ac4dd2a",
+  "bits": "17023774",
+  "target": "0000000000000000000237740000000000000000000000000000000000000000",
+  "difficulty": 126982285146989.3,
+  "time": 1749330552,
+  "mediantime": 1749327469,
+  "verificationprogress": 0.9980027185780235,
+  "initialblockdownload": true,
+  "chainwork": "0000000000000000000000000000000000000000c921dff70350879e2b6b6054",
+  "size_on_disk": 1170451867,
+  "pruned": true,
+  "pruneheight": 899780,
+  "automatic_pruning": true,
+  "prune_target_size": 576716800,
+  "warnings": [
+    "This is a pre-release test build - use at your own risk - do not use for mining or merchant applications"
+  ]
+}
+
+day 1, 13:05 then stop:
+{
+  "chain": "main",
+  "blocks": 899753,
+  "headers": 901110,
+  "bestblockhash": "0000000000000000000075666a40ff4faa37092861061d6e7ab5d9456d64e7b4",
+  "bits": "17023774",
+  "target": "0000000000000000000237740000000000000000000000000000000000000000",
+  "difficulty": 126982285146989.3,
+  "time": 1749025511,
+  "mediantime": 1749021361,
+  "verificationprogress": 0.9968921410890967,
+  "initialblockdownload": true,
+  "chainwork": "0000000000000000000000000000000000000000c84c7c7ef25729b417955dd8",
+  "size_on_disk": 756671164,
+  "pruned": true,
+  "pruneheight": 899463,
+  "automatic_pruning": true,
+  "prune_target_size": 576716800,
+  "warnings": [
+    "This is a pre-release test build - use at your own risk - do not use for mining or merchant applications"
+  ]
+}
+
+day 1, 11:48:
+{
+  "chain": "main",
+  "blocks": 894642,
+  "headers": 901099,
+  "bestblockhash": "0000000000000000000207eab2821dd0887f723e5289ee2c80dece8b5a8371e6",
+  "bits": "170248b6",
+  "target": "0000000000000000000248b60000000000000000000000000000000000000000",
+  "difficulty": 123234387977050.9,
+  "time": 1746041114,
+  "mediantime": 1746037885,
+  "verificationprogress": 0.9854480615564969,
+  "initialblockdownload": true,
+  "chainwork": "0000000000000000000000000000000000000000bfaf53830a0911b60b9b59c6",
+  "size_on_disk": 601270263,
+  "pruned": true,
+  "pruneheight": 894349,
+  "automatic_pruning": true,
+  "prune_target_size": 576716800,
+  "warnings": [
+    "This is a pre-release test build - use at your own risk - do not use for mining or merchant applications"
+  ]
+}
+day 1, 11:07:
+{
+  "chain": "main",
+  "blocks": 891749,
+  "headers": 891749,
+  "bestblockhash": "00000000000000000002201c70f1553b97aa9668351296699753508a1a3d4303",
+  "bits": "17025105",
+  "target": "0000000000000000000251050000000000000000000000000000000000000000",
+  "difficulty": 121507793131898.1,
+  "time": 1744268661,
+  "mediantime": 1744266591,
+  "verificationprogress": 0.9786323341920981,
+  "initialblockdownload": true,
+  "chainwork": "0000000000000000000000000000000000000000bac4e94bfda4dc31cd75aa04",
+  "size_on_disk": 467877742,
+  "pruned": true,
+  "pruneheight": 891453,
+  "automatic_pruning": true,
+  "prune_target_size": 576716800,
+  "warnings": [
+    "This is a pre-release test build - use at your own risk - do not use for mining or merchant applications"
+  ]
+}
+----------------------
+6 mins: synced 500 blocks, 7974 blocks should take 96 mins to finish syncing
+----------------------
+from /tmp/debug.log
+rpcport: 8332
+cookie: /tmp/bitcoin_data/.cookie
+
+./build/bin/bitcoin-cli  -rpcport=8332  -rpcuser=__cookie__ -rpcpassword=2b97970475eddcd8d788b847983676cc78ccd1da5253496af3f9a94347c47588 getblockchaininfo
+
+day2 19:06:
+{
+  "chain": "main",
+  "blocks": 900990,
+  "headers": 900990,
+  "bestblockhash": "0000000000000000000027bda3850ed27a6171f35bf70a2a354ad648fd476c81",
+  "bits": "17023774",
+  "target": "0000000000000000000237740000000000000000000000000000000000000000",
+  "difficulty": 126982285146989.3,
+  "time": 1749768925,
+  "mediantime": 1749766619,
+  "verificationprogress": 1,
+  "initialblockdownload": false,
+  "chainwork": "0000000000000000000000000000000000000000ca7a8b743601147c6230c0e4",
+  "size_on_disk": 621826803,
+  "pruned": true,
+  "pruneheight": 900663,
+  "automatic_pruning": true,
+  "prune_target_size": 576716800,
+  "warnings": [
+    "This is a pre-release test build - use at your own risk - do not use for mining or merchant applications"
+  ]
+}
+
+day2 19:03:
+{
+  "chain": "main",
+  "blocks": 900835,
+  "headers": 900990,
+  "bestblockhash": "00000000000000000001416c06dfad234e76cb00cd448a93333bace1b989980b",
+  "bits": "17023774",
+  "target": "0000000000000000000237740000000000000000000000000000000000000000",
+  "difficulty": 126982285146989.3,
+  "time": 1749676794,
+  "mediantime": 1749673200,
+  "verificationprogress": 0.9996439346893344,
+  "initialblockdownload": true,
+  "chainwork": "0000000000000000000000000000000000000000ca349e465efcc24b47aa37b0",
+  "size_on_disk": 921000673,
+  "pruned": true,
+  "pruneheight": 900367,
+  "automatic_pruning": true,
+  "prune_target_size": 576716800,
+  "warnings": [
+    "This is a pre-release test build - use at your own risk - do not use for mining or merchant applications"
+  ]
+}
+
+day2 restart: 18:51
+{
+  "chain": "main",
+  "blocks": 900041,
+  "headers": 900989,
+  "bestblockhash": "00000000000000000001f33e99f7bb3498bddf9b1170e2f2d62a1f51fa7d1876",
+  "bits": "17023774",
+  "target": "0000000000000000000237740000000000000000000000000000000000000000",
+  "difficulty": 126982285146989.3,
+  "time": 1749215257,
+  "mediantime": 1749212285,
+  "verificationprogress": 0.9978725598667256,
+  "initialblockdownload": true,
+  "chainwork": "0000000000000000000000000000000000000000c8ce6a0a9f95b1e7b0ebd558",
+  "size_on_disk": 626241220,
+  "pruned": true,
+  "pruneheight": 899713,
+  "automatic_pruning": true,
+  "prune_target_size": 576716800,
+  "warnings": [
+    "This is a pre-release test build - use at your own risk - do not use for mining or merchant applications"
+  ]
+}
+
+20:03: then kill the job.  resume later
+{
+  "chain": "main",
+  "blocks": 900003,
+  "headers": 900846,
+  "bestblockhash": "000000000000000000019ba085f3b1933b9431fd4a57b80e5d0f67996ccbe02c",
+  "bits": "17023774",
+  "target": "0000000000000000000237740000000000000000000000000000000000000000",
+  "difficulty": 126982285146989.3,
+  "time": 1749189292,
+  "mediantime": 1749188113,
+  "verificationprogress": 0.9980878097186652,
+  "initialblockdownload": true,
+  "chainwork": "0000000000000000000000000000000000000000c8bd455d86f2c70b8cb06cb0",
+  "size_on_disk": 568974882,
+  "pruned": true,
+  "pruneheight": 899713,
+  "automatic_pruning": true,
+  "prune_target_size": 576716800,
+  "warnings": [
+    "This is a pre-release test build - use at your own risk - do not use for mining or merchant applications"
+  ]
+}
+
+19:22: should remove 5 mins time to rebuild from source code to disable lock contention message
+{
+  "chain": "main",
+  "blocks": 897578,
+  "headers": 900845,
+  "bestblockhash": "00000000000000000001d88951d4cb21d8af93b585458cdde31f85bd62343a0c",
+  "bits": "17025049",
+  "target": "0000000000000000000250490000000000000000000000000000000000000000",
+  "difficulty": 121658450774825,
+  "time": 1747755782,
+  "mediantime": 1747753321,
+  "verificationprogress": 0.9925870447642339,
+  "initialblockdownload": true,
+  "chainwork": "0000000000000000000000000000000000000000c494b5a3ac478d6b808bf4b9",
+  "size_on_disk": 761196767,
+  "pruned": true,
+  "pruneheight": 897195,
+  "automatic_pruning": true,
+  "prune_target_size": 576716800,
+  "warnings": [
+    "This is a pre-release test build - use at your own risk - do not use for mining or merchant applications"
+  ]
+}
+
+19:02
+{
+  "chain": "main",
+  "blocks": 896857,
+  "headers": 900845,
+  "bestblockhash": "0000000000000000000003da228cd89642130f92f42a4adf71d9a9124583c614",
+  "bits": "17025ced",
+  "target": "000000000000000000025ced0000000000000000000000000000000000000000",
+  "difficulty": 119116256505723.5,
+  "time": 1747329806,
+  "mediantime": 1747328044,
+  "verificationprogress": 0.9909507671330133,
+  "initialblockdownload": true,
+  "chainwork": "0000000000000000000000000000000000000000c35f71337e3a447f4f330d2c",
+  "size_on_disk": 676503378,
+  "pruned": true,
+  "pruneheight": 896533,
+  "automatic_pruning": true,
+  "prune_target_size": 576716800,
+  "warnings": [
+    "This is a pre-release test build - use at your own risk - do not use for mining or merchant applications"
+  ]
+}
+
+18:32
+{
+  "chain": "main",
+  "blocks": 895628,
+  "headers": 900843,
+  "bestblockhash": "000000000000000000011248b26d60166ea772ca5e0cb4a695510a91d0eb5a32",
+  "bits": "17025ced",
+  "target": "000000000000000000025ced0000000000000000000000000000000000000000",
+  "difficulty": 119116256505723.5,
+  "time": 1746611266,
+  "mediantime": 1746605690,
+  "verificationprogress": 0.9881991668083915,
+  "initialblockdownload": true,
+  "chainwork": "0000000000000000000000000000000000000000c15756b642045493475d2146",
+  "size_on_disk": 628427714,
+  "pruned": true,
+  "pruneheight": 895302,
+  "automatic_pruning": true,
+  "prune_target_size": 576716800,
+  "warnings": [
+    "This is a pre-release test build - use at your own risk - do not use for mining or merchant applications"
+  ]
+}
+
+18:03
+{
+  "chain": "main",
+  "blocks": 893900,
+  "headers": 900839,
+  "bestblockhash": "0000000000000000000201dc2eed46144772a2a760dfbe7c1e0fc2fc7745b18c",
+  "bits": "170248b6",
+  "target": "0000000000000000000248b60000000000000000000000000000000000000000",
+  "difficulty": 123234387977050.9,
+  "time": 1745575644,
+  "mediantime": 1745574619,
+  "verificationprogress": 0.984228274338707,
+  "initialblockdownload": true,
+  "chainwork": "0000000000000000000000000000000000000000be6a761fb463c2993888f8fa",
+  "size_on_disk": 712710837,
+  "pruned": true,
+  "pruneheight": 893565,
+  "automatic_pruning": true,
+  "prune_target_size": 576716800,
+  "warnings": [
+    "This is a pre-release test build - use at your own risk - do not use for mining or merchant applications"
+  ]
+}
+
+17:54:
+{
+  "chain": "main",
+  "blocks": 893363,
+  "headers": 900838,
+  "bestblockhash": "000000000000000000018a6148c477bed81d16022e987ea19166ce1ac6db37a5",
+  "bits": "170248b6",
+  "target": "0000000000000000000248b60000000000000000000000000000000000000000",
+  "difficulty": 123234387977050.9,
+  "time": 1745232903,
+  "mediantime": 1745229287,
+  "verificationprogress": 0.9829101252843827,
+  "initialblockdownload": true,
+  "chainwork": "0000000000000000000000000000000000000000bd7f59b23532d9bb37958c48",
+  "size_on_disk": 852133575,
+  "pruned": true,
+  "pruneheight": 893040,
+  "automatic_pruning": true,
+  "prune_target_size": 576716800,
+  "warnings": [
+    "This is a pre-release test build - use at your own risk - do not use for mining or merchant applications"
+  ]
+}
+
+2025-06-11: 17:48
+{
+  "chain": "main",
+  "blocks": 892863,
+  "headers": 900837,
+  "bestblockhash": "00000000000000000000b9ad0988755880ec6648c5d84a3242249d842b488d07",
+  "bits": "17025105",
+  "target": "0000000000000000000251050000000000000000000000000000000000000000",
+  "difficulty": 121507793131898.1,
+  "time": 1744908310,
+  "mediantime": 1744906211,
+  "verificationprogress": 0.9816583149873396,
+  "initialblockdownload": true,
+  "chainwork": "0000000000000000000000000000000000000000bca5d016ac11e7cb641fc6e0",
+  "size_on_disk": 862122526,
+  "pruned": true,
+  "pruneheight": 892498,
+  "automatic_pruning": true,
+  "prune_target_size": 576716800,
+  "warnings": [
+    "This is a pre-release test build - use at your own risk - do not use for mining or merchant applications"
+  ]
+}
+
+original height: 891749
+----------------------
+# bitcoind -datadir=/Users/tnnd/Downloads/bitcoin_data -daemon=0 -debug=all -blocksonly=1 -debuglogfile=/tmp/debug.log -prune=550 -dbcache=2048
+bitcoind -datadir=/tmp/bitcoin_data -daemon=0 -debug=all -blocksonly=1 -debuglogfile=/tmp/debug.log -prune=550 -dbcache=2048
+----------------------
+pruned node snapshot download:
+https://bitcoin-snapshots.jaonoctus.dev/
+
+# verify checksum
+% sha256sum --check --ignore-missing digests.txt
+
+# verify signature
+% gpg --verify digests.txt.asc
+
+#To import public key before verify signature:
+% gpg --keyserver hkps://keyserver.ubuntu.com --recv-keys EBBB81751DB809DE50DD58C4AC75C86B6EE74334
+
+# to list public keys
+% gpg --list-keys
+----------------------

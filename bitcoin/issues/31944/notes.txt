@@ -1,4 +1,22 @@
 ------------------------
+https://github.com/bitcoin/bitcoin/pull/32615
+------------------------
+0.00001 - 0.00127978
+------------------------
+small_txpuzzle_randfee:
+good randomseed:
+    total_in: 0.04881812
+    amount: 0.005
+    fee: 0.00002828
+    vout[0]: 0.04378984
+    vout[1]: 0.005
+bad randomseed:
+    total_in: 0.04881812
+    amount: 0.005
+    fee: 0.00001414
+    vout[0]: 0.04380398
+    vout[1]: 0.005
+------------------------
 @maflcko @ismaelsadeeq
 
 I dug further into this test failure in bitcoind process and found following:
@@ -42,6 +60,7 @@ feature_fee_estimation_0/node1/regtest/debug.out
 ------------------------
 watchpoint modify -c "extraNum > 0"
 ------------------------
+successBreakPoint is hardcoded in src/rpc/fees.cpp:159: double threshold = 0.95;
 when curPct >= successBreakPoint
 (lldb) fr v curPct successBreakPoint nConf totalNum failNum extraNum
 (double) curPct = 1
@@ -81,3 +100,42 @@ feature_fee_estimation_0/node1/regtest/debug.out
 2025-04-03T20:35:00.810971Z [httpworker.10] [policy/fees.cpp:398] [EstimateMedianVal] [estimatefee] FeeEst: 1 > 95% decay 0.99520: feerate: 435306 from (384675 - 515502) 100.00% 23.6/(23.6 0 mem 0.0 out) Fail: (301403 - 384675) 87.01% 46.9/(46.9 7 mem 0.0 out)
 2025-04-03T20:35:00.815082Z [httpworker.10] [policy/fees.cpp:398] [EstimateMedianVal] [estimatefee] FeeEst: 1 > 95% decay 0.99931: feerate: -1 from (-1 - -1) 0.00% 0.0/(0.0 0 mem 0.0 out) Fail: (301403 - 1e+99) 92.37% 169.5/(169.5 14 mem 0.0 out)
 
+------------------------
+(lldb) bt
+* thread #16, name = 'b-httpworker.12', stop reason = breakpoint 1.1
+  * frame #0: 0x0000000101481910 bitcoind`TxConfirmStats::EstimateMedianVal(this=0x0000600000618790, confTarget=1, sufficientTxVal=0.5, successBreakPoint=0.94999999999999996, nBlockHeight=210, result=0x000000016f8ace98) const at fees.cpp:307:17
+    frame #1: 0x00000001014878a4 bitcoind`CBlockPolicyEstimator::estimateRawFee(this=0x0000600000818ee0, confTarget=1, successThreshold=0.94999999999999996, horizon=SHORT_HALFLIFE, result=0x000000016f8ace98) const at fees.cpp:754:28
+    frame #2: 0x00000001015ce150 bitcoind`estimaterawfee()::$_0::operator()(this=0x000000016f8ad5b8, self=0x000000016f8ad598, request=0x000000016f8aeb10) const at fees.cpp:176:41
+    frame #3: 0x00000001015cde28 bitcoind`decltype(std::declval<estimaterawfee()::$_0&>()(std::declval<RPCHelpMan const&>(), std::declval<JSONRPCRequest const&>())) std::__1::__invoke[abi:v160006]<estimaterawfee()::$_0&, RPCHelpMan const&, JSONRPCRequest const&>(__f=0x000000016f8ad5b8, __args=0x000000016f8ad598, __args=0x000000016f8aeb10) at invoke.h:394:23
+    frame #4: 0x00000001015cdd50 bitcoind`UniValue std::__1::__invoke_void_return_wrapper<UniValue, false>::__call<estimaterawfee()::$_0&, RPCHelpMan const&, JSONRPCRequest const&>(__args=0x000000016f8ad5b8, __args=0x000000016f8ad598, __args=0x000000016f8aeb10) at invoke.h:478:16
+    frame #5: 0x00000001015cdcdc bitcoind`std::__1::__function::__alloc_func<estimaterawfee()::$_0, std::__1::allocator<estimaterawfee()::$_0>, UniValue (RPCHelpMan const&, JSONRPCRequest const&)>::operator()[abi:v160006](this=0x000000016f8ad5b8, __arg=0x000000016f8ad598, __arg=0x000000016f8aeb10) at function.h:185:16
+    frame #6: 0x00000001015cb694 bitcoind`std::__1::__function::__func<estimaterawfee()::$_0, std::__1::allocator<estimaterawfee()::$_0>, UniValue (RPCHelpMan const&, JSONRPCRequest const&)>::operator()(this=0x000000016f8ad5b0, __arg=0x000000016f8ad598, __arg=0x000000016f8aeb10) at function.h:356:12
+    frame #7: 0x00000001020da118 bitcoind`std::__1::__function::__value_func<UniValue (RPCHelpMan const&, JSONRPCRequest const&)>::operator()[abi:v160006](this=0x000000016f8ad5b0, __args=0x000000016f8ad598, __args=0x000000016f8aeb10) const at function.h:510:16
+    frame #8: 0x00000001020c433c bitcoind`std::__1::function<UniValue (RPCHelpMan const&, JSONRPCRequest const&)>::operator()(this= Lambda in File fees.cpp at Line 152, __arg=0x000000016f8ad598, __arg=0x000000016f8aeb10) const at function.h:1156:12
+    frame #9: 0x00000001020c2e7c bitcoind`RPCHelpMan::HandleRequest(this=0x000000016f8ad598, request=0x000000016f8aeb10) const at util.cpp:684:20
+    frame #10: 0x000000010151af60 bitcoind`CRPCCommand::CRPCCommand(this=0x0000000102643670, request=0x000000016f8aeb10, result=0x000000016f8ade00, (null)=true)())::'lambda'(JSONRPCRequest const&, UniValue&, bool)::operator()(JSONRPCRequest const&, UniValue&, bool) const at server.h:101:91
+    frame #11: 0x000000010151aec8 bitcoind`decltype(std::declval<CRPCCommand::CRPCCommand(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>, RPCHelpMan (*)())::'lambda'(JSONRPCRequest const&, UniValue&, bool)&>()(std::declval<JSONRPCRequest const&>(), std::declval<UniValue&>(), std::declval<bool>())) std::__1::__invoke[abi:v160006]<CRPCCommand::CRPCCommand(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>, RPCHelpMan (*)())::'lambda'(JSONRPCRequest const&, UniValue&, bool)&, JSONRPCRequest const&, UniValue&, bool>(__f=0x0000000102643670, __args=0x000000016f8aeb10, __args=0x000000016f8ade00, __args=0x000000016f8ad7d7) at invoke.h:394:23
+    frame #12: 0x000000010151addc bitcoind`bool std::__1::__invoke_void_return_wrapper<bool, false>::__call<CRPCCommand::CRPCCommand(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>, RPCHelpMan (*)())::'lambda'(JSONRPCRequest const&, UniValue&, bool)&, JSONRPCRequest const&, UniValue&, bool>(__args=0x0000000102643670, __args=0x000000016f8aeb10, __args=0x000000016f8ade00, __args=0x000000016f8ad7d7) at invoke.h:478:16
+    frame #13: 0x000000010151ad5c bitcoind`std::__1::__function::__alloc_func<CRPCCommand::CRPCCommand(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>, RPCHelpMan (*)())::'lambda'(JSONRPCRequest const&, UniValue&, bool), std::__1::allocator<CRPCCommand::CRPCCommand(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>, RPCHelpMan (*)())::'lambda'(JSONRPCRequest const&, UniValue&, bool)>, bool (JSONRPCRequest const&, UniValue&, bool)>::operator()[abi:v160006](this=0x0000000102643670, __arg=0x000000016f8aeb10, __arg=0x000000016f8ade00, __arg=0x000000016f8ad7d7) at function.h:185:16
+    frame #14: 0x00000001015186f4 bitcoind`std::__1::__function::__func<CRPCCommand::CRPCCommand(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>, RPCHelpMan (*)())::'lambda'(JSONRPCRequest const&, UniValue&, bool), std::__1::allocator<CRPCCommand::CRPCCommand(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>, RPCHelpMan (*)())::'lambda'(JSONRPCRequest const&, UniValue&, bool)>, bool (JSONRPCRequest const&, UniValue&, bool)>::operator()(this=0x0000000102643668, __arg=0x000000016f8aeb10, __arg=0x000000016f8ade00, __arg=0x000000016f8ad7d7) at function.h:356:12
+    frame #15: 0x000000010136fa10 bitcoind`std::__1::__function::__value_func<bool (JSONRPCRequest const&, UniValue&, bool)>::operator()[abi:v160006](this=0x0000000102643668, __args=0x000000016f8aeb10, __args=0x000000016f8ade00, __args=0x000000016f8ad7d7) const at function.h:510:16
+    frame #16: 0x000000010136f8f4 bitcoind`std::__1::function<bool (JSONRPCRequest const&, UniValue&, bool)>::operator()(this= Function = estimaterawfee() , __arg=0x000000016f8aeb10, __arg=0x000000016f8ade00, __arg=true) const at function.h:1156:12
+    frame #17: 0x00000001017a0de8 bitcoind`ExecuteCommand(command=0x0000000102643638, request=0x000000016f8aeb10, result=0x000000016f8ade00, last_handler=true) at server.cpp:512:20
+    frame #18: 0x00000001017861d8 bitcoind`ExecuteCommands(commands=size=1, request=0x000000016f8aeb10, result=0x000000016f8ade00) at server.cpp:477:13
+    frame #19: 0x0000000101785f14 bitcoind`CRPCTable::execute(this=0x0000000102649fc0, request=0x000000016f8aeb10) const at server.cpp:497:13
+    frame #20: 0x00000001017859d4 bitcoind`JSONRPCExec(jreq=0x000000016f8aeb10, catch_errors=true) at server.cpp:353:31
+    frame #21: 0x0000000100eb912c bitcoind`HTTPReq_JSONRPC(context=0x0000600003f31bc8, req=0x000060000311bb60) at httprpc.cpp:217:21
+    frame #22: 0x0000000100eb88e0 bitcoind`StartHTTPRPC(std::__1::any const&)::$_0::operator()(this=0x0000600003f31bc8, req=0x000060000311bb60, (null)="") const at httprpc.cpp:368:80
+    frame #23: 0x0000000100eb886c bitcoind`decltype(std::declval<StartHTTPRPC(std::__1::any const&)::$_0&>()(std::declval<HTTPRequest*>(), std::declval<std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>> const&>())) std::__1::__invoke[abi:v160006]<StartHTTPRPC(std::__1::any const&)::$_0&, HTTPRequest*, std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>> const&>(__f=0x0000600003f31bc8, __args=0x000000016f8aee10, __args="") at invoke.h:394:23
+    frame #24: 0x0000000100eb878c bitcoind`bool std::__1::__invoke_void_return_wrapper<bool, false>::__call<StartHTTPRPC(std::__1::any const&)::$_0&, HTTPRequest*, std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>> const&>(__args=0x0000600003f31bc8, __args=0x000000016f8aee10, __args="") at invoke.h:478:16
+    frame #25: 0x0000000100eb8714 bitcoind`std::__1::__function::__alloc_func<StartHTTPRPC(std::__1::any const&)::$_0, std::__1::allocator<StartHTTPRPC(std::__1::any const&)::$_0>, bool (HTTPRequest*, std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>> const&)>::operator()[abi:v160006](this=0x0000600003f31bc8, __arg=0x000000016f8aee10, __arg="") at function.h:185:16
+    frame #26: 0x0000000100eb60f8 bitcoind`std::__1::__function::__func<StartHTTPRPC(std::__1::any const&)::$_0, std::__1::allocator<StartHTTPRPC(std::__1::any const&)::$_0>, bool (HTTPRequest*, std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>> const&)>::operator()(this=0x0000600003f31bc0, __arg=0x000000016f8aee10, __arg="") at function.h:356:12
+    frame #27: 0x0000000100ed8930 bitcoind`std::__1::__function::__value_func<bool (HTTPRequest*, std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>> const&)>::operator()[abi:v160006](this=0x0000600001233138, __args=0x000000016f8aee10, __args="") const at function.h:510:16
+    frame #28: 0x0000000100ed8824 bitcoind`std::__1::function<bool (HTTPRequest*, std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>> const&)>::operator()(this= Lambda in File httprpc.cpp at Line 368, __arg=0x000060000311bb60, __arg="") const at function.h:1156:12
+    frame #29: 0x0000000100ed8488 bitcoind`HTTPWorkItem::operator()(this=0x0000600001233110) at httpserver.cpp:60:9
+    frame #30: 0x0000000100eebcf8 bitcoind`WorkQueue<HTTPClosure>::Run(this=0x0000600000618580) at httpserver.cpp:115:13
+    frame #31: 0x0000000100ec4f8c bitcoind`HTTPWorkQueueRun(queue=0x0000600000618580, worker_num=12) at httpserver.cpp:417:12
+    frame #32: 0x0000000100ee8c30 bitcoind`decltype(std::declval<void (*)(WorkQueue<HTTPClosure>*, int)>()(std::declval<WorkQueue<HTTPClosure>*>(), std::declval<int>())) std::__1::__invoke[abi:v160006]<void (*)(WorkQueue<HTTPClosure>*, int), WorkQueue<HTTPClosure>*, int>(__f=0x000060000311acc8, __args=0x000060000311acd0, __args=0x000060000311acd8) at invoke.h:394:23
+    frame #33: 0x0000000100ee8aec bitcoind`void std::__1::__thread_execute[abi:v160006]<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(WorkQueue<HTTPClosure>*, int), WorkQueue<HTTPClosure>*, int, 2ul, 3ul>(__t=size=4, (null)=__tuple_indices<2UL, 3UL> @ 0x000000016f8aef77) at thread:282:5
+    frame #34: 0x0000000100ee7aa8 bitcoind`void* std::__1::__thread_proxy[abi:v160006]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(WorkQueue<HTTPClosure>*, int), WorkQueue<HTTPClosure>*, int>>(__vp=0x000060000311acc0) at thread:293:5
+    frame #35: 0x0000000185d4f2e4 libsystem_pthread.dylib`_pthread_start + 136
