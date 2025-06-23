@@ -1,7 +1,544 @@
 ----------------------
+b env_posix.cc:340 // ::write
+size: 32768
+----------------------
+crontab -e
+*/5 * * * * /usr/sbin/newsyslog
+----------------------
 git log -1 --oneline
 
 f94167512d (HEAD -> master, origin/master, origin/HEAD) Merge bitcoin/bitcoin#32676: test: apply microsecond precision to test framework logging
+
+----------------------
+@GregTonoski To answer your question, I spent more time studying how the logs (debug.log) and leveldb files are written.  
+debug.log: it calls `fwrite` in `src/logging.cpp`, in function `FileWriteStr()`.
+leveldb (where compacting files are happening): it calls `::write()` in `src/leveldb/util/env_posix.cc`, in function: `WriteUnbuffered`
+
+Both didn't call `fflush` or `fcntl` immediately, which is good because they will be written to cache and will not be persisted to disk at the moment.  For leveldb, the write to disk is happening at DBImpl::FinishCompactionOutputFile in src/leveldb/db/db_impl.cc by calling `compact->outfile->Sync();` then `compact->outfile->Close();`
+
+I further validated the performance of `::write()`, since the actual leveldb data size is 32768, the write is super fast.  I wrote a test program to validate `fwrite` and `::write `(with 32768 byte of string).  On my SSD, `fwrite` of 32K of string can go up to 1100+ MB/s in a while loop, and for `::write`, it can go up to 800+ MB/s in a while loop.
+
+In my bitcoin block download test, I see mostly the disk operation is about 200 MB/s, plus the CPU utilization ranges between 20% - 40% most of time for bitcoind, so I assume this is more due to available blocks downloaded is actually limited.
+
+I even commented out `compact->outfile->Sync();` and `compact->outfile->Close(); `to see the impact of 11K+ disk sync operations.  The actual time saved is about 4 minutes, which is not significant compare to total initial block download time of about 70 minutes.
+
+Further, I ran a test to see the performance of my SSD:
+`% dd if=/dev/zero of=testfile bs=1m count=1024`
+It ranges from 1500 MB/s - 2100 MB/s
+
+So far I don't see an obvious performance issue as the inital block downloads typically finishes within 70 minutes with **debug=0**, which matches your original expectation.
+
+Now, go back to your original observation that it didn't finish for a long time for 3 tries.  Following items are in my mind:
+1) Could you run `dd` command and verify your disk is fast enough?
+2) Could you run the test with `debug=0`?
+2) Could you profile your `bitcoind` so we can see where it spends most of time?
+I have notes on Mac about how to profile it: https://github.com/tnndbtc/notes/blob/main/bitcoin/profile.txt.  Not sure if it helps on your Linux OS.
+
+Also, if needed, we can have a debug session together.  We can meet on IRC channel or have a zoom meeting and then I can help the profiling or debugging on your environment.
+----------------------
+DBImpl::DoCompactionWork calls "::write()" in PosixWritableFile::WriteUnbuffered
+
+  * frame #0: 0x0000000105bc3188 bitcoind`leveldb::(anonymous namespace)::PosixWritableFile::WriteUnbuffered(this=0x0000000120008000, data="", size=4231) at env_posix.cc:340:38
+    frame #1: 0x0000000105bc30c0 bitcoind`leveldb::(anonymous namespace)::PosixWritableFile::FlushBuffer(this=0x0000000120008000) at env_posix.cc:333:21
+    frame #2: 0x0000000105bc2c58 bitcoind`leveldb::(anonymous namespace)::PosixWritableFile::Flush(this=0x0000000120008000) at env_posix.cc:310:36
+    frame #3: 0x0000000105bb0c18 bitcoind`leveldb::TableBuilder::Flush(this=0x000000013a8ffff0) at table_builder.cc:134:26
+    frame #4: 0x0000000105bb09b4 bitcoind`leveldb::TableBuilder::Add(this=0x000000013a8ffff0, key=0x000000016c216a98, value=0x000000016c216a68) at table_builder.cc:121:5
+    frame #5: 0x0000000105b5e5f8 bitcoind`leveldb::DBImpl::DoCompactionWork(this=0x000000012b60e840, compact=0x000000012a1fff50) at db_impl.cc:997:25
+    frame #6: 0x0000000105b5d90c bitcoind`leveldb::DBImpl::BackgroundCompaction(this=0x000000012b60e840) at db_impl.cc:746:14
+    frame #7: 0x0000000105b5d190 bitcoind`leveldb::DBImpl::BackgroundCall(this=0x000000012b60e840) at db_impl.cc:687:5
+    frame #8: 0x0000000105b5d08c bitcoind`leveldb::DBImpl::BGWork(db=0x000000012b60e840) at db_impl.cc:676:34
+    frame #9: 0x0000000105bc40dc bitcoind`leveldb::(anonymous namespace)::PosixEnv::BackgroundThreadMain(this=0x0000000106288b20) at env_posix.cc:830:5
+    frame #10: 0x0000000105bc3e74 bitcoind`leveldb::(anonymous namespace)::PosixEnv::BackgroundThreadEntryPoint(env=0x0000000106288b20) at env_posix.cc:736:10
+----------------------
+debug=0, release build, debug=0
+21:58 started
+2025-06-23T03:11:49Z Leaving InitialBlockDownload (latching to false)
+
+{
+  "chain": "main",
+  "blocks": 891784,
+  "headers": 899748,
+  "bestblockhash": "000000000000000000009942393c797d6d0bff9e88bc1ae84a3d7e7546f46f61",
+  "bits": "17025105",
+  "target": "0000000000000000000251050000000000000000000000000000000000000000",
+  "difficulty": 121507793131898.1,
+  "time": 1744289274,
+  "mediantime": 1744287334,
+  "verificationprogress": 0.9756481264950316,
+  "initialblockdownload": true,
+  "chainwork": "0000000000000000000000000000000000000000bad4053aeb398576be334f76",
+  "size_on_disk": 521915177,
+  "pruned": true,
+  "pruneheight": 891453,
+  "automatic_pruning": true,
+  "prune_target_size": 576716800,
+  "warnings": [
+    "This is a pre-release test build - use at your own risk - do not use for mining or merchant applications"
+  ]
+}
+----------------------
+debug=0, release build, do not call Sync() and Close() in leveldb
+
+21:26:
+2025-06-23T01:26:51Z Leaving InitialBlockDownload (latching to false)
+
+21:18
+{
+  "chain": "main",
+  "blocks": 900825,
+  "headers": 902365,
+  "bestblockhash": "00000000000000000001e7f66dacba05764b43680bbbeb7bfa2a5b30e8ed56c9",
+  "bits": "17023774",
+  "target": "0000000000000000000237740000000000000000000000000000000000000000",
+  "difficulty": 126982285146989.3,
+  "time": 1749669929,
+  "mediantime": 1749667507,
+  "verificationprogress": 0.9962767216004886,
+  "initialblockdownload": true,
+  "chainwork": "0000000000000000000000000000000000000000ca301b5c3015411ed2573718",
+  "size_on_disk": 705667973,
+  "pruned": true,
+  "pruneheight": 900476,
+  "automatic_pruning": true,
+  "prune_target_size": 576716800,
+  "warnings": [
+    "This is a pre-release test build - use at your own risk - do not use for mining or merchant applications"
+  ]
+}
+
+20:18 started
+{
+  "chain": "main",
+  "blocks": 891824,
+  "headers": 902358,
+  "bestblockhash": "000000000000000000020f98450f3cd4f20f49816a8a410a303a5588758e6f2b",
+  "bits": "17025105",
+  "target": "0000000000000000000251050000000000000000000000000000000000000000",
+  "difficulty": 121507793131898.1,
+  "time": 1744317627,
+  "mediantime": 1744315718,
+  "verificationprogress": 0.9757787621336723,
+  "initialblockdownload": true,
+  "chainwork": "0000000000000000000000000000000000000000bae549b9b19a46ea1a79c366",
+  "size_on_disk": 658827667,
+  "pruned": true,
+  "pruneheight": 891453,
+  "automatic_pruning": true,
+  "prune_target_size": 576716800,
+  "warnings": [
+    "This is a pre-release test build - use at your own risk - do not use for mining or merchant applications"
+  ]
+}
+----------------------
+debug=0, release build, with dbwrapper.cpp change
+78 mins
+iostat shows mostly between 160-200 MB/s
+2025-06-18T23:49:09Z Leaving InitialBlockDownload (latching to false)
+18:31 started
+{
+  "chain": "main",
+  "blocks": 891778,
+  "headers": 897748,
+  "bestblockhash": "0000000000000000000094182ef47c21faaf19be08aebfe7537014ad8a28f0d6",
+  "bits": "17025105",
+  "target": "0000000000000000000251050000000000000000000000000000000000000000",
+  "difficulty": 121507793131898.1,
+  "time": 1744287108,
+  "mediantime": 1744284899,
+  "verificationprogress": 0.9769802351921105,
+  "initialblockdownload": true,
+  "chainwork": "0000000000000000000000000000000000000000bad16e27e71168723d28be12",
+  "size_on_disk": 512869963,
+  "pruned": true,
+  "pruneheight": 891453,
+  "automatic_pruning": true,
+  "prune_target_size": 576716800,
+  "warnings": [
+    "This is a pre-release test build - use at your own risk - do not use for mining or merchant applications"
+  ]
+}
+----------------------
+debug=0, release build
+2025-06-18T22:27:05Z Leaving InitialBlockDownload (latching to false)
+68 mins to finish
+iostat shows mostly between 180-220 MB/s
+18:14
+{
+  "chain": "main",
+  "blocks": 899532,
+  "headers": 901821,
+  "bestblockhash": "00000000000000000000003d88417510c0d9143b214d1adedd7e62c5daee36b7",
+  "bits": "17023774",
+  "target": "0000000000000000000237740000000000000000000000000000000000000000",
+  "difficulty": 126982285146989.3,
+  "time": 1748888632,
+  "mediantime": 1748886463,
+  "verificationprogress": 0.9946446216156571,
+  "initialblockdownload": true,
+  "chainwork": "0000000000000000000000000000000000000000c7e8c8e118f482f729eb03ec",
+  "size_on_disk": 694072931,
+  "pruned": true,
+  "pruneheight": 899155,
+  "automatic_pruning": true,
+  "prune_target_size": 576716800,
+  "warnings": [
+    "This is a pre-release test build - use at your own risk - do not use for mining or merchant applications"
+  ]
+}
+18:00
+{
+  "chain": "main",
+  "blocks": 897290,
+  "headers": 901820,
+  "bestblockhash": "00000000000000000000679fc969e8525f143754067db4ff017a909d9fa805b0",
+  "bits": "17025049",
+  "target": "0000000000000000000250490000000000000000000000000000000000000000",
+  "difficulty": 121658450774825,
+  "time": 1747593370,
+  "mediantime": 1747588140,
+  "verificationprogress": 0.9896766019327107,
+  "initialblockdownload": true,
+  "chainwork": "0000000000000000000000000000000000000000c4183a9c5b73ae76feb27459",
+  "size_on_disk": 805900421,
+  "pruned": true,
+  "pruneheight": 896964,
+  "automatic_pruning": true,
+  "prune_target_size": 576716800,
+  "warnings": [
+    "This is a pre-release test build - use at your own risk - do not use for mining or merchant applications"
+  ]
+}
+17:19 started
+{
+  "chain": "main",
+  "blocks": 891749,
+  "headers": 891749,
+  "bestblockhash": "00000000000000000002201c70f1553b97aa9668351296699753508a1a3d4303",
+  "bits": "17025105",
+  "target": "0000000000000000000251050000000000000000000000000000000000000000",
+  "difficulty": 121507793131898.1,
+  "time": 1744268661,
+  "mediantime": 1744266591,
+  "verificationprogress": 0.9769258965617045,
+  "initialblockdownload": true,
+  "chainwork": "0000000000000000000000000000000000000000bac4e94bfda4dc31cd75aa04",
+  "size_on_disk": 467877742,
+  "pruned": true,
+  "pruneheight": 891453,
+  "automatic_pruning": true,
+  "prune_target_size": 576716800,
+  "warnings": [
+    "This is a pre-release test build - use at your own risk - do not use for mining or merchant applications"
+  ]
+}
+----------------------
+@GregTonoski I did more test and found that reducing [leveldb] Generated table #3728@0: 64330 keys, 8671437 bytes entries wouldn't affect the overall download time. However, changing debug=0 would definitely reducing the time.
+Test 1:
+run bitcoind with debug=0 which reduces size of debug.log, Generated table entries is not reduced:
+
+        KB/t            tps             MB/s
+AVG:    44.41095541     1294.624204     37.95407643
+MAX:    97.28           5227            167.52
+MIN:    10.53           45              2.03
+STDEV:  21.0085229      1396.674945     38.32545358
+
+Total time: 131 mins (reduced from 162 mins)
+No "Generated table" due to debug=0
+
+Test 2:
+change to debug=1, to avoid the massive log trace of: [lock] Enter: lock contention m_mutex, checkqueue.h:82 started  by hacking src/sync.h and comment out the log trace LOG_TIME_MICROS_WITH_CATEGORY(strprintf("lock contention %s, %s:%d", pszName, pszFile, nLine), BCLog::LOCK); , this will significantly reduce the output in debug.log so that my small disk can see all entries of Generated table.
+
+Total time: 129 minutes
+Total Generated table entries: 11623. This is the base line for file compaction comparison.
+
+Test 3:
+To reduce total Generated table entries, I studied the code in src/dbwrapper.cpp function: leveldb::Options GetOptions(size_t nCacheSize)
+
+This function takes dbcache=2048 and converted it to KB, i.e., 2097152. However, the original code to set options.block_cache, options.write_buffer_size, and options.max_file_size are in bytes which is too small compare to default values set in src/leveldb/include/leveldb/options.h. Example, for write_buffer_size, it defaults to 4MB (4 * 1024 * 1024).
+
+Quote from original source code in src/dbwrapper.h:
+
+options.block_cache = leveldb::NewLRUCache(nCacheSize / 2);
+options.write_buffer_size = nCacheSize / 4;
+options.max_file_size = std::max(options.max_file_size, DBWRAPPER_MAX_FILE_SIZE);
+
+For this test, I hacked the values to be:
+
+options.block_cache = leveldb::NewLRUCache(nCacheSize / 2 * 1024); // 2048 / 2 * 1024 = 1GB
+options.write_buffer_size = nCacheSize / 4 * 1024; // 2048 / 4 * 1024 = 500MB
+options.max_file_size = std::max(options.max_file_size, 2 * DBWRAPPER_MAX_FILE_SIZE); // 64 MiB
+
+Re-run the test, with src/sync.h hacked to reduce size of debug.log, and debug=1, total time to finish initial download: 130 mins
+Total Generated table: 5850
+
+Conclusion: with Generated table reduced to 50.33%, the total time is almost identical when Generated table entry is doubled. The high disk operations likely is due to debug=1.
+
+I am not sure if there are other clues that this initial download time can still be further reduced. I'd appreciate if there are further comments/clues.
+----------------------
+db_cache: 2048
+no change in dbwrapper.cpp: leveldb::Options GetOptions
+
+KB/t            tps             MB/s
+44.41095541     1294.624204     37.95407643
+97.28           5227            167.52
+10.53           45              2.03
+21.0085229      1396.674945     38.32545358
+
+Total time: 131 mins
+No "Generated table" due to debug=0
+debug=0
+avoid: 2025-06-15T03:20:30Z [lock] Enter: lock contention m_mutex, checkqueue.h:82 started
+
+11:34 started
+2025-06-18T13:45:28Z Leaving InitialBlockDownload (latching to false)
+
+11:37
+{
+  "chain": "main",
+  "blocks": 891923,
+  "headers": 901783,
+  "bestblockhash": "00000000000000000001a16a3dd6cc21b314290ddefc64ff1bc0f79ba2110586",
+  "bits": "17025105",
+  "target": "0000000000000000000251050000000000000000000000000000000000000000",
+  "difficulty": 121507793131898.1,
+  "time": 1744372955,
+  "mediantime": 1744369811,
+  "verificationprogress": 0.9774026104807203,
+  "initialblockdownload": true,
+  "chainwork": "0000000000000000000000000000000000000000bb100673763025b46ba82258",
+  "size_on_disk": 631091896,
+  "pruned": true,
+  "pruneheight": 891555,
+  "automatic_pruning": true,
+  "prune_target_size": 576716800,
+  "warnings": [
+    "This is a pre-release test build - use at your own risk - do not use for mining or merchant applications"
+  ]
+}
+----------------------
+db_cache: 2048
+no change in dbwrapper.cpp: leveldb::Options GetOptions
+03:37 started
+05:46 "initialblockdownload": false,
+Total Generated table: 11623
+----------------------
+db_cache: 2048
+Total Generated table: 5850
+Total time: 130 mins
+[2025-06-18 01:39:03]   "initialblockdownload": false,
+23:29: started
+
+{
+  "chain": "main",
+  "blocks": 891891,
+  "headers": 901711,
+  "bestblockhash": "000000000000000000007a2d73b741bbc92349fe4f4e81f92e887ab122ba96ec",
+  "bits": "17025105",
+  "target": "0000000000000000000251050000000000000000000000000000000000000000",
+  "difficulty": 121507793131898.1,
+  "time": 1744356685,
+  "mediantime": 1744353816,
+  "verificationprogress": 0.9775029456164327,
+  "initialblockdownload": true,
+  "chainwork": "0000000000000000000000000000000000000000bb02360e0aaf8af1bb6fc598",
+  "size_on_disk": 632006500,
+  "pruned": true,
+  "pruneheight": 891555,
+  "automatic_pruning": true,
+  "prune_target_size": 576716800,
+  "warnings": [
+    "This is a pre-release test build - use at your own risk - do not use for mining or merchant applications"
+  ]
+}
+----------------------
+db_cache: 2048
+
+[2025-06-17 19:48:26]   "initialblockdownload": false,
+total: 2 hr 22 mins, 142 minutes
+options.block_cache = leveldb::NewLRUCache(nCacheSize / 2 * 1024); // 2048 / 2 * 1024 = 1GB
+options.write_buffer_size = nCacheSize / 4 * 1024; // 2048 / 4 * 1024 = 500MB
+options.max_file_size = std::max(options.max_file_size, 2 * DBWRAPPER_MAX_FILE_SIZE); // 64 MiB
+
+19:38 
+{
+  "chain": "main",
+  "blocks": 900783,
+  "headers": 901688,
+  "bestblockhash": "00000000000000000000f590dba76cc2e61f2f04be4f2f912ddd332120d3fc6f",
+  "bits": "17023774",
+  "target": "0000000000000000000237740000000000000000000000000000000000000000",
+  "difficulty": 126982285146989.3,
+  "time": 1749648738,
+  "mediantime": 1749644945,
+  "verificationprogress": 0.9978704458153406,
+  "initialblockdownload": true,
+  "chainwork": "0000000000000000000000000000000000000000ca1d28b7d17c22974bfa9b00",
+  "size_on_disk": 1258861447,
+  "pruned": true,
+  "pruneheight": 900485,
+  "automatic_pruning": true,
+  "prune_target_size": 576716800,
+  "warnings": [
+    "This is a pre-release test build - use at your own risk - do not use for mining or merchant applications"
+  ]
+}
+17:26 started
+29c0495535a6eaa7f4e696be1467d0de5b76d23ed87af0c907ec200c5fb18795
+
+{
+  "chain": "main",
+  "blocks": 891771,
+  "headers": 901673,
+  "bestblockhash": "00000000000000000000e62f39a23d44e72aeded4bc9ef2c9b692c1dfba6be3c",
+  "bits": "17025105",
+  "target": "0000000000000000000251050000000000000000000000000000000000000000",
+  "difficulty": 121507793131898.1,
+  "time": 1744283141,
+  "mediantime": 1744278860,
+  "verificationprogress": 0.9773035016254089,
+  "initialblockdownload": true,
+  "chainwork": "0000000000000000000000000000000000000000bace6891b78d4697a69c69c8",
+  "size_on_disk": 615505125,
+  "pruned": true,
+  "pruneheight": 891453,
+  "automatic_pruning": true,
+  "prune_target_size": 576716800,
+  "warnings": [
+    "This is a pre-release test build - use at your own risk - do not use for mining or merchant applications"
+  ]
+}
+----------------------
+db_cache: 2048
+
+265 seconds: 174 Generated table
+486 seconds: 325 Generated table
+started: 13:25, with 
+options.block_cache = leveldb::NewLRUCache(nCacheSize / 2 * 1024); // 2048 / 2 * 1024 = 1GB
+options.write_buffer_size = nCacheSize / 4 * 1024; // 2048 / 4 * 1024 = 500MB
+options.max_file_size = std::max(options.max_file_size, 2 * DBWRAPPER_MAX_FILE_SIZE); // 64 MiB
+
+{
+  "chain": "main",
+  "blocks": 891840,
+  "headers": 901651,
+  "bestblockhash": "000000000000000000020534cbff29a2bb67bfcb49419865456e2018c4356f80",
+  "bits": "17025105",
+  "target": "0000000000000000000251050000000000000000000000000000000000000000",
+  "difficulty": 121507793131898.1,
+  "time": 1744327119,
+  "mediantime": 1744325710,
+  "verificationprogress": 0.9775257606118817,
+  "initialblockdownload": true,
+  "chainwork": "0000000000000000000000000000000000000000baec31ec675a944b7295f1c6",
+  "size_on_disk": 673139953,
+  "pruned": true,
+  "pruneheight": 891453,
+  "automatic_pruning": true,
+  "prune_target_size": 576716800,
+  "warnings": [
+    "This is a pre-release test build - use at your own risk - do not use for mining or merchant applications"
+  ]
+}
+----------------------
+db_cache: 1024
+[2025-06-17 13:01:09]   "initialblockdownload": false,
+{
+  "chain": "main",
+  "blocks": 901544,
+  "headers": 901651,
+  "bestblockhash": "0000000000000000000028e9f54556d1d75e410f2c4796442ba9a1989236e1c7",
+  "bits": "17023a04",
+  "target": "000000000000000000023a040000000000000000000000000000000000000000",
+  "difficulty": 126411437451912.2,
+  "time": 1750097666,
+  "mediantime": 1750094864,
+  "verificationprogress": 0.9996851319467311,
+  "initialblockdownload": false,
+  "chainwork": "0000000000000000000000000000000000000000cb73adb0ce3ed79b0054174c",
+  "size_on_disk": 475862940,
+  "pruned": true,
+  "pruneheight": 901207,
+  "automatic_pruning": true,
+  "prune_target_size": 576716800,
+  "warnings": [
+    "This is a pre-release test build - use at your own risk - do not use for mining or merchant applications"
+  ]
+}
+10:01: start
+{
+  "chain": "main",
+  "blocks": 891749,
+  "headers": 891749,
+  "bestblockhash": "00000000000000000002201c70f1553b97aa9668351296699753508a1a3d4303",
+  "bits": "17025105",
+  "target": "0000000000000000000251050000000000000000000000000000000000000000",
+  "difficulty": 121507793131898.1,
+  "time": 1744268661,
+  "mediantime": 1744266591,
+  "verificationprogress": 0.9773486356381749,
+  "initialblockdownload": true,
+  "chainwork": "0000000000000000000000000000000000000000bac4e94bfda4dc31cd75aa04",
+  "size_on_disk": 467877742,
+  "pruned": true,
+  "pruneheight": 891453,
+  "automatic_pruning": true,
+  "prune_target_size": 576716800,
+  "warnings": [
+    "This is a pre-release test build - use at your own risk - do not use for mining or merchant applications"
+  ]
+}
+----------------------
+db_cache: 8192
+21:01
+[2025-06-16 21:01:12]   "initialblockdownload": false,
+18:06 started with dbcache = 8192 to reduce "Generated table" in leveldb
+{
+  "chain": "main",
+  "blocks": 891749,
+  "headers": 891749,
+  "bestblockhash": "00000000000000000002201c70f1553b97aa9668351296699753508a1a3d4303",
+  "bits": "17025105",
+  "target": "0000000000000000000251050000000000000000000000000000000000000000",
+  "difficulty": 121507793131898.1,
+  "time": 1744268661,
+  "mediantime": 1744266591,
+  "verificationprogress": 0.9775635658139011,
+  "initialblockdownload": true,
+  "chainwork": "0000000000000000000000000000000000000000bac4e94bfda4dc31cd75aa04",
+  "size_on_disk": 467877742,
+  "pruned": true,
+  "pruneheight": 891453,
+  "automatic_pruning": true,
+  "prune_target_size": 576716800,
+  "warnings": [
+    "This is a pre-release test build - use at your own risk - do not use for mining or merchant applications"
+  ]
+}
+----------------------
+iostat -d -w 1
+            KB/t    tps    MB/s
+Average:    21.71	4974	101.98
+STDDEV:     5.21	1336	25.88
+Max:        48.37	8851	194.67
+Min:        12.8	1197	37.35
+
+@GregTonoski Sure, I re-run the test, and used following command to collect disk I/O, then used spreadsheet to calculate the average, std dev, max and min of the data collected over 15 minutes (not whole 3 hours) of the test:
+
+% iostat -d -w 1
+
+                   KB/t        tps        MB/s
+Average:    21.71       4974    101.98
+STDDEV:    5.21        1336    25.88
+Max:          48.37      8851    194.67
+Min:           12.8         1197     37.35
+
+KB/t: KB per transfer
+tps: transfer per second
+MB/s: MB per second
+
+As for number of entries of "Generated table", since I only have a small disk space and I am rotating the debug.log file, so I sampled the number of entries during the test.  A typical 90 seconds range, I see about 100 of such entries, at early stage of the test.
+
+However, when approaching to end of test, I remember that I did see many more of such entries.
 
 ----------------------
 For the past several days, I have run the test based on the input provided, and it typically finishes the InitialBlockDownload within 3 hours.  Tested multiple times.
