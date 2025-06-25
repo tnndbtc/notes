@@ -9,6 +9,29 @@ The workaround for now is to install a different version of 'pprof'
 
 Make sure to add ~/go/bin/ at beginning of $PATH so the default one will not be used.
 ----------------------------------
+the .prof is defined by env var: CPUPROFILE
+CPUPROFILE=/tmp/bitcoind.prof
+----------------------------------
+To do it for cmake:
+in CMakeLists.txt, comment out try_append_linker_flag("-Wl,-dead_strip_dylibs" TARGET core_interface)
+
+in src/CmakeLists.txt:
+  find_library(PROFILER_LIB profiler REQUIRED)
+  target_link_libraries(bitcoind
+    core_interface
+    bitcoin_node
+    $<TARGET_NAME_IF_EXISTS:bitcoin_wallet>
+    ${PROFILER_LIB}
+  )
+
+After build:
+% otool -L build/bin/bitcoind  
+build/bin/bitcoind:
+	/opt/homebrew/opt/gperftools/lib/libprofiler.0.dylib (compatibility version 6.0.0, current version 6.13.0)
+	...
+	...
+	...
+----------------------------------
 Link -lprofiler to bitcoind executable
 In bitcoin/src/Makefile, add -lprofiler for bitcoind_LINK:
 
