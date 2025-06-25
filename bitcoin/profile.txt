@@ -11,6 +11,11 @@ Make sure to add ~/go/bin/ at beginning of $PATH so the default one will not be 
 ----------------------------------
 the .prof is defined by env var: CPUPROFILE
 CPUPROFILE=/tmp/bitcoind.prof
+
+then call:
+% pprof -callgrind bitcoind.prof # this one generates profile001.callgraph.out
+% qcachegrind profile001.callgraph.out
+
 ----------------------------------
 To do it for cmake:
 in CMakeLists.txt, comment out try_append_linker_flag("-Wl,-dead_strip_dylibs" TARGET core_interface)
