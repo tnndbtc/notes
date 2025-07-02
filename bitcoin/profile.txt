@@ -9,6 +9,9 @@ The workaround for now is to install a different version of 'pprof'
 
 Make sure to add ~/go/bin/ at beginning of $PATH so the default one will not be used.
 ----------------------------------
+if run bitcoind as daemon, the .prof is created immediately when bitcoind starts, and will not catch the major activities.  If run as "daemon=0", then profile works correctly.  An explanation from chatgpt is:
+It forks and detaches from the shell — the profiler (gperftools) often loses track of the correct process unless profiling is properly re-initialized after fork.
+----------------------------------
 the .prof is defined by env var: CPUPROFILE
 CPUPROFILE=/tmp/bitcoind.prof
 
@@ -16,6 +19,8 @@ then call:
 % pprof -callgrind bitcoind.prof # this one generates profile001.callgraph.out
 % qcachegrind profile001.callgraph.out
 
+# to remotely call RPC to stop bitcoind, instead of bitcoin-cli stop
+curl --user user_name:password --data-binary '{"jsonrpc":"1.0","id":"curltest","method":"stop","params":[]}' -H 'content-type: text/plain;' http://127.0.0.1:8332/
 ----------------------------------
 To do it for cmake:
 in CMakeLists.txt, comment out try_append_linker_flag("-Wl,-dead_strip_dylibs" TARGET core_interface)
