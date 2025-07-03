@@ -10,6 +10,153 @@ git log -1 --oneline
 f94167512d (HEAD -> master, origin/master, origin/HEAD) Merge bitcoin/bitcoin#32676: test: apply microsecond precision to test framework logging
 
 ----------------------
+LevelDB I/O & compaction	~1500s+	~30%	Block/UTXO writes, frequent flushes
+    leveldb::DecodeFixed32      — 241.66s (4.93%)
+    leveldb::DBImpl::DoCompactionWork — 1430.83s (29.2%)
+    leveldb::TableBuilder::Add  — 1276.91s (26.06%)
+    leveldb::TableBuilder::Flush — 1261.79s (25.75%)
+
+This shows:
+
+Heavy disk write and compaction activity (i.e., block and UTXO storage)
+Your node is writing/compacting LevelDB tables intensely, likely due to:
+High block arrival rate (IBD or fast sync)
+Small dbcache size
+Pruned node frequently rewriting LevelDB
+Mitigation Tips:
+Increase dbcache (e.g., -dbcache=2048)
+Use SSD with high IOPS
+Reduce parallel sync load if profiling
+
+Script & signature validation	~1500s	~30%	Block tx validation (e.g. Taproot)
+    VerifyScript                   — 847.28s (17.29%)
+    ExecuteWitnessScript          — 459.55s (9.38%)
+    GenericTransactionSignatureChecker::* — ~1000s+
+    EvalChecksig / EvalChecksigPreTapscript — ~900s+
+
+These are cryptographic verification steps, expected during:
+Block validation
+Mempool signature checks
+P2SH, Taproot, Schnorr verification
+So, your node is actively validating lots of transactions, which is normal during IBD or stress tests.
+
+Thread/task framework	~1600s	~33%	Multi-threaded validation infrastructure
+    CCheckQueue::Loop             — 1681.38s (34.31%)
+    std::__1::function::operator() — 1646.61s (33.6%)
+    std::__1::__thread_execute     — 4649.43s (94.88%)
+These show:
+A large amount of time spent in multithreaded task queues and worker threads
+CCheckQueue handles script validation in parallel
+Consistent with intensive validation load
+----------------------
+* thread #23, name = 'b-scriptch.3', stop reason = breakpoint 5.1
+  * frame #0: 0x0000000106508fc4 bitcoind`VerifyScript(scriptSig=0x000000010f622fa0, scriptPubKey=0x000000010f80d208, witness=0x000000010f622fc8, flags=134677, checker=0x000000016ba32c78, serror=0x000000016ba32cb4) at interpreter.cpp:1961:9
+    frame #1: 0x0000000105b04f20 bitcoind`CScriptCheck::operator()(this=0x000000010f80d200) at validation.cpp:2122:9
+    frame #2: 0x0000000105b6c73c bitcoind`CCheckQueue<CScriptCheck, std::__1::pair<ScriptError_t, std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>>>::Loop(this=0x000000013800ae30, fMaster=false) at checkqueue.h:131:36
+    frame #3: 0x0000000105b979e8 bitcoind`CCheckQueue<CScriptCheck, std::__1::pair<ScriptError_t, std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>>>::CCheckQueue(this=0x0000600000cb5148)::'lambda'()::operator()() const at checkqueue.h:152:17
+    frame #4: 0x0000000105b978d4 bitcoind`decltype(std::declval<CCheckQueue<CScriptCheck, std::__1::pair<ScriptError_t, std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>>>::CCheckQueue(unsigned int, int)::'lambda'()>()()) std::__1::__invoke[abi:v160006]<CCheckQueue<CScriptCheck, std::__1::pair<ScriptError_t, std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>>>::CCheckQueue(unsigned int, int)::'lambda'()>(__f=0x0000600000cb5148) at invoke.h:394:23
+    frame #5: 0x0000000105b97878 bitcoind`void std::__1::__thread_execute[abi:v160006]<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, CCheckQueue<CScriptCheck, std::__1::pair<ScriptError_t, std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>>>::CCheckQueue(unsigned int, int)::'lambda'()>(__t=size=2, (null)=__tuple_indices<> @ 0x000000016ba32f77) at thread:282:5
+    frame #6: 0x0000000105b97224 bitcoind`void* std::__1::__thread_proxy[abi:v160006]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, CCheckQueue<CScriptCheck, std::__1::pair<ScriptError_t, std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>>>::CCheckQueue(unsigned int, int)::'lambda'()>>(__vp=0x0000600000cb5140) at thread:293:5
+    frame #7: 0x000000018858f2e4 libsystem_pthread.dylib`_pthread_start + 136
+----------------------
+CCheckQueue::Loop
+* thread #33, name = 'b-msghand', stop reason = breakpoint 4.1
+  * frame #0: 0x0000000105b6c2bc bitcoind`CCheckQueue<CScriptCheck, std::__1::pair<ScriptError_t, std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>>>::Loop(this=0x000000013800ae30, fMaster=true) at checkqueue.h:74:41
+    frame #1: 0x0000000105b6c248 bitcoind`CCheckQueue<CScriptCheck, std::__1::pair<ScriptError_t, std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>>>::Complete(this=0x000000013800ae30) at checkqueue.h:168:16
+    frame #2: 0x0000000105b0ad98 bitcoind`CCheckQueueControl<CScriptCheck, std::__1::pair<ScriptError_t, std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>>>::Complete(this=0x0000000595735cf0) at checkqueue.h:223:28
+    frame #3: 0x0000000105b08a04 bitcoind`Chainstate::ConnectBlock(this=0x00006000035b40e0, block=0x0000600003ebcc78, state=0x0000000595736d48, pindex=0x0000600047775140, view=0x0000000595736398, fJustCheck=false) at validation.cpp:2715:41
+    frame #4: 0x0000000105b0e00c bitcoind`Chainstate::ConnectTip(this=0x00006000035b40e0, state=0x0000000595736d48, pindexNew=0x0000600047775140, pblock=nullptr, connectTrace=0x0000000595736a90, disconnectpool=0x00000005957367d8) at validation.cpp:3178:19
+    frame #5: 0x0000000105b107e0 bitcoind`Chainstate::ActivateBestChainStep(this=0x00006000035b40e0, state=0x0000000595736d48, pindexMostWork=0x000060003b70c440, pblock=nullptr, fInvalidFound=0x0000000595736a8f, connectTrace=0x0000000595736a90) at validation.cpp:3373:18
+    frame #6: 0x0000000105b11678 bitcoind`Chainstate::ActivateBestChain(this=0x00006000035b40e0, state=0x0000000595736d48, pblock=std::__1::shared_ptr<const CBlock>::element_type @ 0x0000600003eb0528 strong=3 weak=1) at validation.cpp:3514:22
+    frame #7: 0x0000000105b1cda0 bitcoind`ChainstateManager::ProcessNewBlock(this=0x000000013800ae00, block=std::__1::shared_ptr<const CBlock>::element_type @ 0x0000600003eb0528 strong=3 weak=1, force_processing=true, min_pow_checked=true, new_block=0x0000000595736e87) at validation.cpp:4592:29
+    frame #8: 0x00000001053b38fc bitcoind`(anonymous namespace)::PeerManagerImpl::ProcessBlock(this=0x000000011a814600, node=0x000000012f6069c0, block=std::__1::shared_ptr<const CBlock>::element_type @ 0x0000600003eb0528 strong=3 weak=1, force_processing=true, min_pow_checked=true) at net_processing.cpp:3320:16
+    frame #9: 0x0000000105349b68 bitcoind`(anonymous namespace)::PeerManagerImpl::ProcessMessage(this=0x000000011a814600, pfrom=0x000000012f6069c0, msg_type="block", vRecv=0x000000059573ab60, time_received=(__rep_ = 1751476611353816), interruptMsgProc=0x000000013800ef40) at net_processing.cpp:4694:9
+    frame #10: 0x000000010534c77c bitcoind`(anonymous namespace)::PeerManagerImpl::ProcessMessages(this=0x000000011a814600, pfrom=0x000000012f6069c0, interruptMsgProc=0x000000013800ef40) at net_processing.cpp:5057:9
+    frame #11: 0x000000010528686c bitcoind`CConnman::ThreadMessageHandler(this=0x000000013800ec00) at net.cpp:3047:49
+    frame #12: 0x00000001053222a4 bitcoind`CConnman::Start(CScheduler&, CConnman::Options const&)::$_4::operator()(this=0x000000059573af20) const at net.cpp:3377:80
+    frame #13: 0x0000000105322244 bitcoind`decltype(std::declval<CConnman::Start(CScheduler&, CConnman::Options const&)::$_4&>()()) std::__1::__invoke[abi:v160006]<CConnman::Start(CScheduler&, CConnman::Options const&)::$_4&>(__f=0x000000059573af20) at invoke.h:394:23
+    frame #14: 0x0000000105322184 bitcoind`void std::__1::__invoke_void_return_wrapper<void, true>::__call<CConnman::Start(CScheduler&, CConnman::Options const&)::$_4&>(__args=0x000000059573af20) at invoke.h:487:9
+    frame #15: 0x0000000105322128 bitcoind`std::__1::__function::__alloc_func<CConnman::Start(CScheduler&, CConnman::Options const&)::$_4, std::__1::allocator<CConnman::Start(CScheduler&, CConnman::Options const&)::$_4>, void ()>::operator()[abi:v160006](this=0x000000059573af20) at function.h:185:16
+    frame #16: 0x000000010531fae4 bitcoind`std::__1::__function::__func<CConnman::Start(CScheduler&, CConnman::Options const&)::$_4, std::__1::allocator<CConnman::Start(CScheduler&, CConnman::Options const&)::$_4>, void ()>::operator()(this=0x000000059573af18) at function.h:356:12
+    frame #17: 0x000000010513d1e0 bitcoind`std::__1::__function::__value_func<void ()>::operator()[abi:v160006](this=0x000000059573af18) const at function.h:510:16
+    frame #18: 0x000000010513d158 bitcoind`std::__1::function<void ()>::operator()(this=0x000000059573af18) const at function.h:1156:12
+    frame #19: 0x00000001064969fc bitcoind`util::TraceThread(thread_name="msghand", thread_func=function<void ()> @ 0x000000059573af18) at thread.cpp:21:9
+    frame #20: 0x000000010531edc0 bitcoind`decltype(std::declval<void (*)(std::__1::basic_string_view<char, std::__1::char_traits<char>>, std::__1::function<void ()>)>()(std::declval<char const*>(), std::declval<CConnman::Start(CScheduler&, CConnman::Options const&)::$_4>())) std::__1::__invoke[abi:v160006]<void (*)(std::__1::basic_string_view<char, std::__1::char_traits<char>>, std::__1::function<void ()>), char const*, CConnman::Start(CScheduler&, CConnman::Options const&)::$_4>(__f=0x0000600000cb8088, __args=0x0000600000cb8090, __args=0x0000600000cb8098) at invoke.h:394:23
+    frame #21: 0x000000010531ed18 bitcoind`void std::__1::__thread_execute[abi:v160006]<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(std::__1::basic_string_view<char, std::__1::char_traits<char>>, std::__1::function<void ()>), char const*, CConnman::Start(CScheduler&, CConnman::Options const&)::$_4, 2ul, 3ul>(__t=size=4, (null)=__tuple_indices<2UL, 3UL> @ 0x000000059573af77) at thread:282:5
+    frame #22: 0x000000010531e658 bitcoind`void* std::__1::__thread_proxy[abi:v160006]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(std::__1::basic_string_view<char, std::__1::char_traits<char>>, std::__1::function<void ()>), char const*, CConnman::Start(CScheduler&, CConnman::Options const&)::$_4>>(__vp=0x0000600000cb8080) at thread:293:5
+    frame #23: 0x000000018858f2e4 libsystem_pthread.dylib`_pthread_start + 136
+----------------------
+* thread #33, name = 'b-msghand', stop reason = breakpoint 2.1
+    frame #0: 0x000000010534000c bitcoind`(anonymous namespace)::PeerManagerImpl::ProcessMessage(this=0x000000011a814600, pfrom=0x000000010e604080, msg_type="version", vRecv=0x000000059573ab60, time_received=(__rep_ = 1751476440658923), interruptMsgProc=0x000000013800ef40) at net_processing.cpp:3450:5
+(lldb) bt
+* thread #33, name = 'b-msghand', stop reason = breakpoint 2.1
+  * frame #0: 0x000000010534000c bitcoind`(anonymous namespace)::PeerManagerImpl::ProcessMessage(this=0x000000011a814600, pfrom=0x000000010e604080, msg_type="version", vRecv=0x000000059573ab60, time_received=(__rep_ = 1751476440658923), interruptMsgProc=0x000000013800ef40) at net_processing.cpp:3450:5
+    frame #1: 0x000000010534c77c bitcoind`(anonymous namespace)::PeerManagerImpl::ProcessMessages(this=0x000000011a814600, pfrom=0x000000010e604080, interruptMsgProc=0x000000013800ef40) at net_processing.cpp:5057:9
+    frame #2: 0x000000010528686c bitcoind`CConnman::ThreadMessageHandler(this=0x000000013800ec00) at net.cpp:3047:49
+    frame #3: 0x00000001053222a4 bitcoind`CConnman::Start(CScheduler&, CConnman::Options const&)::$_4::operator()(this=0x000000059573af20) const at net.cpp:3377:80
+    frame #4: 0x0000000105322244 bitcoind`decltype(std::declval<CConnman::Start(CScheduler&, CConnman::Options const&)::$_4&>()()) std::__1::__invoke[abi:v160006]<CConnman::Start(CScheduler&, CConnman::Options const&)::$_4&>(__f=0x000000059573af20) at invoke.h:394:23
+    frame #5: 0x0000000105322184 bitcoind`void std::__1::__invoke_void_return_wrapper<void, true>::__call<CConnman::Start(CScheduler&, CConnman::Options const&)::$_4&>(__args=0x000000059573af20) at invoke.h:487:9
+    frame #6: 0x0000000105322128 bitcoind`std::__1::__function::__alloc_func<CConnman::Start(CScheduler&, CConnman::Options const&)::$_4, std::__1::allocator<CConnman::Start(CScheduler&, CConnman::Options const&)::$_4>, void ()>::operator()[abi:v160006](this=0x000000059573af20) at function.h:185:16
+    frame #7: 0x000000010531fae4 bitcoind`std::__1::__function::__func<CConnman::Start(CScheduler&, CConnman::Options const&)::$_4, std::__1::allocator<CConnman::Start(CScheduler&, CConnman::Options const&)::$_4>, void ()>::operator()(this=0x000000059573af18) at function.h:356:12
+    frame #8: 0x000000010513d1e0 bitcoind`std::__1::__function::__value_func<void ()>::operator()[abi:v160006](this=0x000000059573af18) const at function.h:510:16
+    frame #9: 0x000000010513d158 bitcoind`std::__1::function<void ()>::operator()(this=0x000000059573af18) const at function.h:1156:12
+    frame #10: 0x00000001064969fc bitcoind`util::TraceThread(thread_name="msghand", thread_func=function<void ()> @ 0x000000059573af18) at thread.cpp:21:9
+    frame #11: 0x000000010531edc0 bitcoind`decltype(std::declval<void (*)(std::__1::basic_string_view<char, std::__1::char_traits<char>>, std::__1::function<void ()>)>()(std::declval<char const*>(), std::declval<CConnman::Start(CScheduler&, CConnman::Options const&)::$_4>())) std::__1::__invoke[abi:v160006]<void (*)(std::__1::basic_string_view<char, std::__1::char_traits<char>>, std::__1::function<void ()>), char const*, CConnman::Start(CScheduler&, CConnman::Options const&)::$_4>(__f=0x0000600000cb8088, __args=0x0000600000cb8090, __args=0x0000600000cb8098) at invoke.h:394:23
+    frame #12: 0x000000010531ed18 bitcoind`void std::__1::__thread_execute[abi:v160006]<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(std::__1::basic_string_view<char, std::__1::char_traits<char>>, std::__1::function<void ()>), char const*, CConnman::Start(CScheduler&, CConnman::Options const&)::$_4, 2ul, 3ul>(__t=size=4, (null)=__tuple_indices<2UL, 3UL> @ 0x000000059573af77) at thread:282:5
+    frame #13: 0x000000010531e658 bitcoind`void* std::__1::__thread_proxy[abi:v160006]<std::__1::tuple<std::__1::unique_ptr<std::__1::__thread_struct, std::__1::default_delete<std::__1::__thread_struct>>, void (*)(std::__1::basic_string_view<char, std::__1::char_traits<char>>, std::__1::function<void ()>), char const*, CConnman::Start(CScheduler&, CConnman::Options const&)::$_4>>(__vp=0x0000600000cb8080) at thread:293:5
+    frame #14: 0x000000018858f2e4 libsystem_pthread.dylib`_pthread_start + 136
+----------------------
+Started: 20:06
+Ended prof collection: 20:40
+Total time profiled: 34 minutes
+{
+  "chain": "main",
+  "blocks": 891749,
+  "headers": 891749,
+  "bestblockhash": "00000000000000000002201c70f1553b97aa9668351296699753508a1a3d4303",
+  "bits": "17025105",
+  "target": "0000000000000000000251050000000000000000000000000000000000000000",
+  "difficulty": 121507793131898.1,
+  "time": 1744268661,
+  "mediantime": 1744266591,
+  "verificationprogress": 0.9726961999326105,
+  "initialblockdownload": true,
+  "chainwork": "0000000000000000000000000000000000000000bac4e94bfda4dc31cd75aa04",
+  "size_on_disk": 467877742,
+  "pruned": true,
+  "pruneheight": 891453,
+  "automatic_pruning": true,
+  "prune_target_size": 576716800,
+  "warnings": [
+    "This is a pre-release test build - use at your own risk - do not use for mining or merchant applications"
+  ]
+}
+----------------------
+Started: 20:48:45
+end: 21:50
+{
+  "chain": "main",
+  "blocks": 896532,
+  "headers": 902588,
+  "bestblockhash": "000000000000000000007a09ce359cfe04a5e1bf6173fb53d53cce7940bbb91a",
+  "bits": "17025ced",
+  "target": "000000000000000000025ced0000000000000000000000000000000000000000",
+  "difficulty": 119116256505723.5,
+  "time": 1747131061,
+  "mediantime": 1747126868,
+  "verificationprogress": 0.9858911375132242,
+  "initialblockdownload": true,
+  "chainwork": "0000000000000000000000000000000000000000c2d5e797afeb6e738273b636",
+  "size_on_disk": 649794576,
+  "pruned": true,
+  "pruneheight": 896195,
+  "automatic_pruning": true,
+  "prune_target_size": 576716800,
+  "warnings": [
+    "This is a pre-release test build - use at your own risk - do not use for mining or merchant applications"
+  ]
+}
+----------------------
 @GregTonoski To answer your question, I spent more time studying how the logs (debug.log) and leveldb files are written.  
 debug.log: it calls `fwrite` in `src/logging.cpp`, in function `FileWriteStr()`.
 leveldb (where compacting files are happening): it calls `::write()` in `src/leveldb/util/env_posix.cc`, in function: `WriteUnbuffered`
@@ -587,6 +734,8 @@ Commands used:
 
 % ./build/bin/bitcoin-cli -rpcport=8332 -rpcuser=__cookie__ -rpcpassword=<cookie> getblockchaininfo
 
+% ./build/bin/bitcoin-cli -rpcport=8332 -rpccookiefile=/path/to/.cookie getblockchaininfo
+
 23:30:
 {
   "chain": "main",
@@ -1132,7 +1281,7 @@ day2 restart: 18:51
 
 original height: 891749
 ----------------------
-# bitcoind -datadir=/Users/tnnd/Downloads/bitcoin_data -daemon=0 -debug=all -blocksonly=1 -debuglogfile=/tmp/debug.log -prune=550 -dbcache=2048
+# bitcoind -datadir=/Users/user/Downloads/bitcoin_data -daemon=0 -debug=all -blocksonly=1 -debuglogfile=/tmp/debug.log -prune=550 -dbcache=2048
 bitcoind -datadir=/tmp/bitcoin_data -daemon=0 -debug=all -blocksonly=1 -debuglogfile=/tmp/debug.log -prune=550 -dbcache=2048
 ----------------------
 pruned node snapshot download:
