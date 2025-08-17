@@ -1,4 +1,26 @@
 ---------------------------
+root cause and fix: https://github.com/bitcoin/bitcoin/pull/33063
+After a fork() in a multithreaded program, the child can safely
+call only async-signal-safe functions (see signal-safety(7))
+until such time as it calls execv.
+
+The standard library (std namespace) is not async-signal-safe. Also, throw, isn't.
+
+There was an alternative implementation using readdir (#32529), but that isn't async-signal-safe either, and that implementation was still using throw.
+
+So temporarily revert this feature.
+
+A follow-up in the future can add it back, using only async-signal-safe functions, or by using a different approach.
+
+Fixes #32524
+Fixes #33015
+Fixes #32855
+
+For reference, a failure can manifest in the GCC debug mode:
+
+While forking, a debug mode mutex is held (by any other thread).
+The forked child tries to use the stdard libary before execv and deadlocks.
+---------------------------
 also in https://github.com/bitcoin/bitcoin/issues/32524
 
 I assume the general code logic should be correct, but likely some exception/run-time error occurred then caused the intermittent issue.
