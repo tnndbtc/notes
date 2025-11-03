@@ -1,0 +1,15 @@
+https://github.com/bitcoin/bitcoin/issues/33318
+https://github.com/bitcoin/bitcoin/issues/33329
+
+logs: https://github.com/bitcoin/bitcoin/actions/runs/17526806361/job/49778354104?pr=33303#step:9:17166
+
+Compared with local run, the difference:
+Good local node: node0-node3 received Shutdown request, and they do NOT have 
+2025-09-07T10:22:29.9249346Z ^[[0;32m node1 2025-09-07T09:42:26.276259Z [msghand] [node/txdownloadman_impl.cpp:464] [node::RejectedTxTodo node::TxDownloadManagerImpl::MempoolRejectedTx(const CTransactionRef &, const TxValidationState &, NodeId, bool)] [txpackages] tx 08bccd11aee383dc68594ea8668958b76ef3471bccd095d523e23fa60dff148a (wtxid=08bccd11aee383dc68594ea8668958b76ef3471bccd095d523e23fa60dff148a) failed but reconsiderable, looking for child in orphanage
+
+Bad CI node: they have the "failed" message, and they do NOT have 
+2025-09-25T16:50:15.851258Z [httpworker.7] [rpc/request.cpp:243] [void JSONRPCRequest::parse(const UniValue &)] [rpc] ThreadRPCServer method=stop user=__cookie__
+2025-09-25T16:50:15.851367Z [init] [httpserver.cpp:514] [void InterruptHTTPServer()] [http] Interrupting HTTP server
+2025-09-25T16:50:15.851487Z [init] [httprpc.cpp:349] [void InterruptHTTPRPC()] [rpc] Interrupting HTTP RPC server
+2025-09-25T16:50:15.851524Z [init] [rpc/server.cpp:286] [void InterruptRPC()] [rpc] Interrupting RPC
+2025-09-25T16:50:15.851578Z [init] [init.cpp:287] [void Shutdown(NodeContext &)] Shutdown in progress...

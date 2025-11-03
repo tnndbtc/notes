@@ -1,0 +1,186 @@
+2025-09-25T16:50:00.981748Z TestFramework (INFO): PRNG seed is: 8195265313370166774
+2025-09-25T16:50:00.982019Z TestFramework (DEBUG): Setting up network thread
+2025-09-25T16:50:00.982188Z TestFramework (INFO): Initializing test directory /tmp/test_runner_₿_🏃_20250925_125000/p2p_1p1c_network_0
+2025-09-25T16:50:00.985242Z TestFramework.node0 (DEBUG): bitcoind started, waiting for RPC to come up
+2025-09-25T16:50:00.986580Z TestFramework.node1 (DEBUG): bitcoind started, waiting for RPC to come up
+2025-09-25T16:50:00.987858Z TestFramework.node2 (DEBUG): bitcoind started, waiting for RPC to come up
+2025-09-25T16:50:00.989479Z TestFramework.node3 (DEBUG): bitcoind started, waiting for RPC to come up
+2025-09-25T16:50:01.250148Z TestFramework.node0 (DEBUG): RPC successfully started
+2025-09-25T16:50:01.254340Z TestFramework.node1 (DEBUG): RPC successfully started
+2025-09-25T16:50:01.255303Z TestFramework.node2 (DEBUG): RPC successfully started
+2025-09-25T16:50:01.256196Z TestFramework.node3 (DEBUG): RPC successfully started
+2025-09-25T16:50:03.790914Z TestFramework (INFO): Fill mempools with large transactions to raise mempool minimum feerates
+2025-09-25T16:50:03.791317Z TestFramework (INFO): Fill the mempool until eviction is triggered and the mempoolminfee rises
+2025-09-25T16:50:04.903067Z TestFramework.node0 (DEBUG): TestNode.generate() dispatches `generate` call to `generatetoaddress`
+2025-09-25T16:50:04.994258Z TestFramework (DEBUG): Create a mempool tx that will be evicted
+2025-09-25T16:50:04.995290Z TestFramework (DEBUG): Fill up the mempool with txs with higher fee rate
+2025-09-25T16:50:07.366684Z TestFramework (DEBUG): The tx should be evicted by now
+2025-09-25T16:50:07.368173Z TestFramework (DEBUG): Check that mempoolminfee is larger than minrelaytxfee
+2025-09-25T16:50:07.369300Z TestFramework (DEBUG): Check that all nodes' mempool minimum feerates are above min relay feerate
+2025-09-25T16:50:07.690912Z TestFramework.p2p (DEBUG): Connecting to Bitcoin Node: 127.0.0.1:11000
+2025-09-25T16:50:07.691448Z TestFramework.p2p (DEBUG): Connected: us=127.0.0.1:49627, them=127.0.0.1:11000
+2025-09-25T16:50:07.691506Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11000: msg_version(nVersion=70016 nServices=9 nTime=Thu Sep 25 12:50:07 2025 addrTo=CAddress(nServices=1 net=IPv4 addr=127.0.0.1 port=11000) addrFrom=CAddress(nServices=1 net=IPv4 addr=0.0.0.0 port=0) nNonce=0xB81EEF25876E1F6D strSubVer=/python-p2p-tester:0.0.3/ nStartingHeight=-1 relay=1)
+2025-09-25T16:50:07.691777Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11000: msg_version(nVersion=70016 nServices=1033 nTime=Thu Sep 25 12:50:07 2025 addrTo=CAddress(nServices=0 net=IPv4 addr=0.0.0.0 port=0) addrFrom=CAddress(nServices=1033 net=IPv4 addr=0.0.0.0 port=0) nNonce=0xC7085222D28CF204 strSubVer=/Satoshi:29.99.0(testnode0)/ nStartingHeight=305 relay=1)
+2025-09-25T16:50:07.691822Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11000: msg_wtxidrelay()
+2025-09-25T16:50:07.691851Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11000: msg_verack()
+2025-09-25T16:50:07.691874Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11000: msg_getaddr()
+2025-09-25T16:50:07.691896Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11000: msg_wtxidrelay()
+2025-09-25T16:50:07.691917Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11000: msg_sendaddrv2()
+2025-09-25T16:50:07.691963Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11000: msg_verack()
+2025-09-25T16:50:07.692123Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11000: msg_sendcmpct(announce=False, version=2)
+2025-09-25T16:50:07.692155Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11000: msg_ping(nonce=91206aaa44134c8e)
+2025-09-25T16:50:07.692180Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11000: msg_pong(nonce=91206aaa44134c8e)
+2025-09-25T16:50:07.692242Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11000: msg_getheaders(locator=CBlockLocator(vHave=[14846972646273956106696334942997099895957475135185742441414153646364740932031, 8770521745452065265647248170437446998823622172727116804324577441206280720457, 35285598101744919063823109781278389253135633402498149010163915811653084106155, 20879287729545753727039397582922483246659378938822691164812876495193001220221, 14074190043999614604515663819071905905162619074199025052270790622502636241266, 57211427199709707347355774476676048995420977330615665518624073... (msg truncated)
+2025-09-25T16:50:07.692286Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11000: msg_feefilter(feerate=0000028f)
+2025-09-25T16:50:07.744758Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11000: msg_ping(nonce=00000000)
+2025-09-25T16:50:07.744806Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11000: msg_ping(nonce=00000001)
+2025-09-25T16:50:07.745047Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11000: msg_pong(nonce=00000000)
+2025-09-25T16:50:07.745084Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11000: msg_pong(nonce=00000001)
+2025-09-25T16:50:07.800853Z TestFramework.p2p (DEBUG): Connecting to Bitcoin Node: 127.0.0.1:11001
+2025-09-25T16:50:07.801402Z TestFramework.p2p (DEBUG): Connected: us=127.0.0.1:49628, them=127.0.0.1:11001
+2025-09-25T16:50:07.801492Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11001: msg_version(nVersion=70016 nServices=9 nTime=Thu Sep 25 12:50:07 2025 addrTo=CAddress(nServices=1 net=IPv4 addr=127.0.0.1 port=11001) addrFrom=CAddress(nServices=1 net=IPv4 addr=0.0.0.0 port=0) nNonce=0x59C34F3C6AABC009 strSubVer=/python-p2p-tester:0.0.3/ nStartingHeight=-1 relay=1)
+2025-09-25T16:50:07.801820Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11001: msg_version(nVersion=70016 nServices=1033 nTime=Thu Sep 25 12:50:07 2025 addrTo=CAddress(nServices=0 net=IPv4 addr=0.0.0.0 port=0) addrFrom=CAddress(nServices=1033 net=IPv4 addr=0.0.0.0 port=0) nNonce=0x24C540F682178916 strSubVer=/Satoshi:29.99.0(testnode1)/ nStartingHeight=305 relay=1)
+2025-09-25T16:50:07.801873Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11001: msg_wtxidrelay()
+2025-09-25T16:50:07.801919Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11001: msg_verack()
+2025-09-25T16:50:07.801957Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11001: msg_getaddr()
+2025-09-25T16:50:07.801996Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11001: msg_wtxidrelay()
+2025-09-25T16:50:07.802078Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11001: msg_sendaddrv2()
+2025-09-25T16:50:07.802114Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11001: msg_verack()
+2025-09-25T16:50:07.802261Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11001: msg_sendcmpct(announce=False, version=2)
+2025-09-25T16:50:07.802304Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11001: msg_ping(nonce=607d6f0be675c4e3)
+2025-09-25T16:50:07.802341Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11001: msg_pong(nonce=607d6f0be675c4e3)
+2025-09-25T16:50:07.802441Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11001: msg_getheaders(locator=CBlockLocator(vHave=[14846972646273956106696334942997099895957475135185742441414153646364740932031, 8770521745452065265647248170437446998823622172727116804324577441206280720457, 35285598101744919063823109781278389253135633402498149010163915811653084106155, 20879287729545753727039397582922483246659378938822691164812876495193001220221, 14074190043999614604515663819071905905162619074199025052270790622502636241266, 57211427199709707347355774476676048995420977330615665518624073... (msg truncated)
+2025-09-25T16:50:07.802484Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11001: msg_feefilter(feerate=0000028f)
+2025-09-25T16:50:07.856008Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11001: msg_ping(nonce=00000000)
+2025-09-25T16:50:07.856094Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11001: msg_ping(nonce=00000001)
+2025-09-25T16:50:07.856488Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11001: msg_pong(nonce=00000000)
+2025-09-25T16:50:07.856606Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11001: msg_pong(nonce=00000001)
+2025-09-25T16:50:07.912881Z TestFramework.p2p (DEBUG): Connecting to Bitcoin Node: 127.0.0.1:11002
+2025-09-25T16:50:07.913736Z TestFramework.p2p (DEBUG): Connected: us=127.0.0.1:49629, them=127.0.0.1:11002
+2025-09-25T16:50:07.913911Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11002: msg_version(nVersion=70016 nServices=9 nTime=Thu Sep 25 12:50:07 2025 addrTo=CAddress(nServices=1 net=IPv4 addr=127.0.0.1 port=11002) addrFrom=CAddress(nServices=1 net=IPv4 addr=0.0.0.0 port=0) nNonce=0xD92FAC9219E52472 strSubVer=/python-p2p-tester:0.0.3/ nStartingHeight=-1 relay=1)
+2025-09-25T16:50:07.914401Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11002: msg_version(nVersion=70016 nServices=1033 nTime=Thu Sep 25 12:50:07 2025 addrTo=CAddress(nServices=0 net=IPv4 addr=0.0.0.0 port=0) addrFrom=CAddress(nServices=1033 net=IPv4 addr=0.0.0.0 port=0) nNonce=0x4DFB2FB59F5C0A82 strSubVer=/Satoshi:29.99.0(testnode2)/ nStartingHeight=305 relay=1)
+2025-09-25T16:50:07.914522Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11002: msg_wtxidrelay()
+2025-09-25T16:50:07.914615Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11002: msg_verack()
+2025-09-25T16:50:07.914702Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11002: msg_getaddr()
+2025-09-25T16:50:07.914785Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11002: msg_wtxidrelay()
+2025-09-25T16:50:07.914864Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11002: msg_sendaddrv2()
+2025-09-25T16:50:07.915055Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11002: msg_verack()
+2025-09-25T16:50:07.915286Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11002: msg_sendcmpct(announce=False, version=2)
+2025-09-25T16:50:07.915382Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11002: msg_ping(nonce=ebe4ec8b2ac47da0)
+2025-09-25T16:50:07.915460Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11002: msg_pong(nonce=ebe4ec8b2ac47da0)
+2025-09-25T16:50:07.915618Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11002: msg_getheaders(locator=CBlockLocator(vHave=[14846972646273956106696334942997099895957475135185742441414153646364740932031, 8770521745452065265647248170437446998823622172727116804324577441206280720457, 35285598101744919063823109781278389253135633402498149010163915811653084106155, 20879287729545753727039397582922483246659378938822691164812876495193001220221, 14074190043999614604515663819071905905162619074199025052270790622502636241266, 57211427199709707347355774476676048995420977330615665518624073... (msg truncated)
+2025-09-25T16:50:07.915693Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11002: msg_feefilter(feerate=0000028f)
+2025-09-25T16:50:07.965121Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11002: msg_ping(nonce=00000000)
+2025-09-25T16:50:07.965417Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11002: msg_ping(nonce=00000001)
+2025-09-25T16:50:07.966024Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11002: msg_pong(nonce=00000000)
+2025-09-25T16:50:07.966230Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11002: msg_pong(nonce=00000001)
+2025-09-25T16:50:08.020108Z TestFramework.p2p (DEBUG): Connecting to Bitcoin Node: 127.0.0.1:11003
+2025-09-25T16:50:08.021086Z TestFramework.p2p (DEBUG): Connected: us=127.0.0.1:49630, them=127.0.0.1:11003
+2025-09-25T16:50:08.021290Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11003: msg_version(nVersion=70016 nServices=9 nTime=Thu Sep 25 12:50:08 2025 addrTo=CAddress(nServices=1 net=IPv4 addr=127.0.0.1 port=11003) addrFrom=CAddress(nServices=1 net=IPv4 addr=0.0.0.0 port=0) nNonce=0x7560F7D6E29ED434 strSubVer=/python-p2p-tester:0.0.3/ nStartingHeight=-1 relay=1)
+2025-09-25T16:50:08.021812Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11003: msg_version(nVersion=70016 nServices=1033 nTime=Thu Sep 25 12:50:08 2025 addrTo=CAddress(nServices=0 net=IPv4 addr=0.0.0.0 port=0) addrFrom=CAddress(nServices=1033 net=IPv4 addr=0.0.0.0 port=0) nNonce=0x74B902077D8A447E strSubVer=/Satoshi:29.99.0(testnode3)/ nStartingHeight=305 relay=1)
+2025-09-25T16:50:08.021958Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11003: msg_wtxidrelay()
+2025-09-25T16:50:08.022066Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11003: msg_verack()
+2025-09-25T16:50:08.022158Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11003: msg_getaddr()
+2025-09-25T16:50:08.022316Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11003: msg_wtxidrelay()
+2025-09-25T16:50:08.022394Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11003: msg_sendaddrv2()
+2025-09-25T16:50:08.022474Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11003: msg_verack()
+2025-09-25T16:50:08.022595Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11003: msg_sendcmpct(announce=False, version=2)
+2025-09-25T16:50:08.022679Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11003: msg_ping(nonce=d114ba2ad6393245)
+2025-09-25T16:50:08.022785Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11003: msg_pong(nonce=d114ba2ad6393245)
+2025-09-25T16:50:08.022939Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11003: msg_getheaders(locator=CBlockLocator(vHave=[14846972646273956106696334942997099895957475135185742441414153646364740932031, 8770521745452065265647248170437446998823622172727116804324577441206280720457, 35285598101744919063823109781278389253135633402498149010163915811653084106155, 20879287729545753727039397582922483246659378938822691164812876495193001220221, 14074190043999614604515663819071905905162619074199025052270790622502636241266, 57211427199709707347355774476676048995420977330615665518624073... (msg truncated)
+2025-09-25T16:50:08.023063Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11003: msg_feefilter(feerate=0000028f)
+2025-09-25T16:50:08.071146Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11003: msg_ping(nonce=00000000)
+2025-09-25T16:50:08.071321Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11003: msg_ping(nonce=00000001)
+2025-09-25T16:50:08.071804Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11003: msg_pong(nonce=00000000)
+2025-09-25T16:50:08.072015Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11003: msg_pong(nonce=00000001)
+2025-09-25T16:50:08.128687Z TestFramework (INFO): Pre-send some transactions to nodes
+2025-09-25T16:50:08.129202Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11001: msg_tx(tx=CTransaction(version=2 vin=[CTxIn(prevout=COutPoint(hash=c8ca64cb3da89905b3ccfc5423d908a17273f90c4893373af9354e61f3bd651c n=0) scriptSig= nSequence=0)] vout=[CTxOut(nValue=49.99989599 scriptPubKey=51202913b252fe537830f843bfdc5fa7d20ba48639a87c86ff837b92d083c55ad7c1)] wit=CTxWitness(CScriptWitness(51,c00000000000000000000000000000000000000000000000000000000000000001)) nLockTime=0))
+2025-09-25T16:50:08.129373Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11001: msg_ping(nonce=00000000)
+2025-09-25T16:50:08.129564Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11001: msg_ping(nonce=00000002)
+2025-09-25T16:50:08.131309Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11001: msg_pong(nonce=00000000)
+2025-09-25T16:50:08.131461Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11001: msg_pong(nonce=00000002)
+2025-09-25T16:50:08.181896Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11001: msg_tx(tx=CTransaction(version=2 vin=[CTxIn(prevout=COutPoint(hash=6385e1ed0245ca85bb83f88647fbf80f6f07ac7fefe1fb84fd8463d0f5cff1b0 n=0) scriptSig=483045022100c3184ef573e43223999145bbdbca10305234358b45588d00384f377c757eb638022042657f6f8018db925309a292b46c9dbf48fbf73f298ec22b5597a16a369d221301 nSequence=0)] vout=[CTxOut(nValue=49.99983199 scriptPubKey=210279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ac)] wit=CTxWitness() nLockTime=0))
+2025-09-25T16:50:08.182074Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11001: msg_ping(nonce=00000000)
+2025-09-25T16:50:08.182156Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11001: msg_ping(nonce=00000003)
+2025-09-25T16:50:08.183388Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11001: msg_pong(nonce=00000000)
+2025-09-25T16:50:08.183500Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11001: msg_pong(nonce=00000003)
+2025-09-25T16:50:08.237005Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11001: msg_tx(tx=CTransaction(version=2 vin=[CTxIn(prevout=COutPoint(hash=7c973091607f5f8e765af18798860039905b8f35fc5f730517257535a978cea7 n=0) scriptSig= nSequence=0)] vout=[CTxOut(nValue=49.99999896 scriptPubKey=51202913b252fe537830f843bfdc5fa7d20ba48639a87c86ff837b92d083c55ad7c1)] wit=CTxWitness(CScriptWitness(51,c00000000000000000000000000000000000000000000000000000000000000001)) nLockTime=0))
+2025-09-25T16:50:08.237397Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11001: msg_ping(nonce=00000000)
+2025-09-25T16:50:08.237638Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11001: msg_ping(nonce=00000004)
+2025-09-25T16:50:08.240058Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11001: msg_pong(nonce=00000000)
+2025-09-25T16:50:08.240238Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11001: msg_pong(nonce=00000004)
+2025-09-25T16:50:08.241777Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11000: msg_inv(inv=[CInv(type=WTX hash=e04aa2353a850bccda24416837fdcf7419cf0ee394f29a710e07b71922230d0b)])
+2025-09-25T16:50:08.241953Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11000: msg_getdata(inv=[CInv(type=WTX hash=e04aa2353a850bccda24416837fdcf7419cf0ee394f29a710e07b71922230d0b)])
+2025-09-25T16:50:08.242071Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11002: msg_inv(inv=[CInv(type=WTX hash=e04aa2353a850bccda24416837fdcf7419cf0ee394f29a710e07b71922230d0b)])
+2025-09-25T16:50:08.242142Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11002: msg_getdata(inv=[CInv(type=WTX hash=e04aa2353a850bccda24416837fdcf7419cf0ee394f29a710e07b71922230d0b)])
+2025-09-25T16:50:08.242502Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11000: msg_tx(tx=CTransaction(version=2 vin=[CTxIn(prevout=COutPoint(hash=7c973091607f5f8e765af18798860039905b8f35fc5f730517257535a978cea7 n=0) scriptSig= nSequence=0)] vout=[CTxOut(nValue=49.99999896 scriptPubKey=51202913b252fe537830f843bfdc5fa7d20ba48639a87c86ff837b92d083c55ad7c1)] wit=CTxWitness(CScriptWitness(51,c00000000000000000000000000000000000000000000000000000000000000001)) nLockTime=0))
+2025-09-25T16:50:08.242749Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11002: msg_tx(tx=CTransaction(version=2 vin=[CTxIn(prevout=COutPoint(hash=7c973091607f5f8e765af18798860039905b8f35fc5f730517257535a978cea7 n=0) scriptSig= nSequence=0)] vout=[CTxOut(nValue=49.99999896 scriptPubKey=51202913b252fe537830f843bfdc5fa7d20ba48639a87c86ff837b92d083c55ad7c1)] wit=CTxWitness(CScriptWitness(51,c00000000000000000000000000000000000000000000000000000000000000001)) nLockTime=0))
+2025-09-25T16:50:08.243612Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11003: msg_inv(inv=[CInv(type=WTX hash=e04aa2353a850bccda24416837fdcf7419cf0ee394f29a710e07b71922230d0b)])
+2025-09-25T16:50:08.243730Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11003: msg_getdata(inv=[CInv(type=WTX hash=e04aa2353a850bccda24416837fdcf7419cf0ee394f29a710e07b71922230d0b)])
+2025-09-25T16:50:08.244218Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11003: msg_tx(tx=CTransaction(version=2 vin=[CTxIn(prevout=COutPoint(hash=7c973091607f5f8e765af18798860039905b8f35fc5f730517257535a978cea7 n=0) scriptSig= nSequence=0)] vout=[CTxOut(nValue=49.99999896 scriptPubKey=51202913b252fe537830f843bfdc5fa7d20ba48639a87c86ff837b92d083c55ad7c1)] wit=CTxWitness(CScriptWitness(51,c00000000000000000000000000000000000000000000000000000000000000001)) nLockTime=0))
+2025-09-25T16:50:08.290118Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11001: msg_tx(tx=CTransaction(version=2 vin=[CTxIn(prevout=COutPoint(hash=acf176487b0619d172d69c2ab4b55a4b67055f4d419d96483749f1fbbf3fa455 n=0) scriptSig= nSequence=0), CTxIn(prevout=COutPoint(hash=87b1be437ce288be3fda8b3e5656a94bd4d6ac12fc8a35d1b05ad8489445b122 n=0) scriptSig= nSequence=0)] vout=[CTxOut(nValue=99.99895792 scriptPubKey=51202913b252fe537830f843bfdc5fa7d20ba48639a87c86ff837b92d083c55ad7c1)] wit=CTxWitness(CScriptWitness(51,c0000000000000000000000000000000000000000000000000000000000000000... (msg truncated)
+2025-09-25T16:50:08.290524Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11001: msg_ping(nonce=00000000)
+2025-09-25T16:50:08.290766Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11001: msg_ping(nonce=00000005)
+2025-09-25T16:50:08.293001Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11001: msg_pong(nonce=00000000)
+2025-09-25T16:50:08.293174Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11001: msg_pong(nonce=00000005)
+2025-09-25T16:50:08.346335Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11001: msg_tx(tx=CTransaction(version=2 vin=[CTxIn(prevout=COutPoint(hash=b1f9928bc80529cc8e42dca1c51e68ff8d5697ca8bc14e0ba7dd2e374024dc47 n=1) scriptSig= nSequence=0), CTxIn(prevout=COutPoint(hash=b1f9928bc80529cc8e42dca1c51e68ff8d5697ca8bc14e0ba7dd2e374024dc47 n=0) scriptSig= nSequence=0)] vout=[CTxOut(nValue=49.99992452 scriptPubKey=51202913b252fe537830f843bfdc5fa7d20ba48639a87c86ff837b92d083c55ad7c1)] wit=CTxWitness(CScriptWitness(51,c0000000000000000000000000000000000000000000000000000000000000000... (msg truncated)
+2025-09-25T16:50:08.346768Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11001: msg_ping(nonce=00000000)
+2025-09-25T16:50:08.347004Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11001: msg_ping(nonce=00000006)
+2025-09-25T16:50:08.349342Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11001: msg_pong(nonce=00000000)
+2025-09-25T16:50:08.349620Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11001: msg_pong(nonce=00000006)
+2025-09-25T16:50:08.399658Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11002: msg_tx(tx=CTransaction(version=2 vin=[CTxIn(prevout=COutPoint(hash=7c973091607f5f8e765af18798860039905b8f35fc5f730517257535a978cea7 n=0) scriptSig= nSequence=0)] vout=[CTxOut(nValue=49.99999896 scriptPubKey=51202913b252fe537830f843bfdc5fa7d20ba48639a87c86ff837b92d083c55ad7c1)] wit=CTxWitness(CScriptWitness(51,c00000000000000000000000000000000000000000000000000000000000000001)) nLockTime=0))
+2025-09-25T16:50:08.400030Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11002: msg_ping(nonce=00000000)
+2025-09-25T16:50:08.400298Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11002: msg_ping(nonce=00000002)
+2025-09-25T16:50:08.400982Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11002: msg_pong(nonce=00000000)
+2025-09-25T16:50:08.401199Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11002: msg_pong(nonce=00000002)
+2025-09-25T16:50:08.454615Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11003: msg_tx(tx=CTransaction(version=2 vin=[CTxIn(prevout=COutPoint(hash=f4ab73911dfad5996ed41e0b9d312d65ff22a9dcc0b9bcab3981a7ea068bdc6d n=0) scriptSig= nSequence=0)] vout=[CTxOut(nValue=49.99999989 scriptPubKey=51202913b252fe537830f843bfdc5fa7d20ba48639a87c86ff837b92d083c55ad7c1)] wit=CTxWitness(CScriptWitness(51,c00000000000000000000000000000000000000000000000000000000000000001)) nLockTime=0))
+2025-09-25T16:50:08.455037Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11003: msg_ping(nonce=00000000)
+2025-09-25T16:50:08.455292Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11003: msg_ping(nonce=00000002)
+2025-09-25T16:50:08.457517Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11003: msg_pong(nonce=00000000)
+2025-09-25T16:50:08.457841Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11003: msg_pong(nonce=00000002)
+2025-09-25T16:50:08.510782Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11003: msg_tx(tx=CTransaction(version=2 vin=[CTxIn(prevout=COutPoint(hash=e45af49c1a8f5a53d79b31027bf8e43b1e88f583921ab3440fd568ef9225264d n=0) scriptSig=483045022100cb9106108f92e243c424e52b722ffc22b4375c5b6d74b1e81231530808dfe57e022050ebf0c8677732be2529af68571c28801ba3a95cfa1f0dda5e957b0a4457c4aa01 nSequence=0)] vout=[CTxOut(nValue=49.99999983 scriptPubKey=210279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798ac)] wit=CTxWitness() nLockTime=0))
+2025-09-25T16:50:08.511239Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11003: msg_ping(nonce=00000000)
+2025-09-25T16:50:08.511483Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11003: msg_ping(nonce=00000003)
+2025-09-25T16:50:08.513613Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11003: msg_pong(nonce=00000000)
+2025-09-25T16:50:08.513861Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11003: msg_pong(nonce=00000003)
+2025-09-25T16:50:08.567164Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11003: msg_tx(tx=CTransaction(version=2 vin=[CTxIn(prevout=COutPoint(hash=7c973091607f5f8e765af18798860039905b8f35fc5f730517257535a978cea7 n=0) scriptSig= nSequence=0)] vout=[CTxOut(nValue=49.99999896 scriptPubKey=51202913b252fe537830f843bfdc5fa7d20ba48639a87c86ff837b92d083c55ad7c1)] wit=CTxWitness(CScriptWitness(51,c00000000000000000000000000000000000000000000000000000000000000001)) nLockTime=0))
+2025-09-25T16:50:08.567582Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11003: msg_ping(nonce=00000000)
+2025-09-25T16:50:08.567829Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11003: msg_ping(nonce=00000004)
+2025-09-25T16:50:08.568517Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11003: msg_pong(nonce=00000000)
+2025-09-25T16:50:08.568761Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11003: msg_pong(nonce=00000004)
+2025-09-25T16:50:08.623350Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11003: msg_tx(tx=CTransaction(version=2 vin=[CTxIn(prevout=COutPoint(hash=63cc9f58ff3bbbf1a8f7f60c9f369be53823a2040c8f34288e01bcd4aeae6f8f n=0) scriptSig= nSequence=0)] vout=[CTxOut(nValue=24.99999926 scriptPubKey=51202913b252fe537830f843bfdc5fa7d20ba48639a87c86ff837b92d083c55ad7c1), CTxOut(nValue=24.99999926 scriptPubKey=51202913b252fe537830f843bfdc5fa7d20ba48639a87c86ff837b92d083c55ad7c1)] wit=CTxWitness(CScriptWitness(51,c00000000000000000000000000000000000000000000000000000000000000001)) nLockTime=... (msg truncated)
+2025-09-25T16:50:08.623670Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11003: msg_ping(nonce=00000000)
+2025-09-25T16:50:08.623838Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11003: msg_ping(nonce=00000005)
+2025-09-25T16:50:08.625974Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11003: msg_pong(nonce=00000000)
+2025-09-25T16:50:08.626159Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11003: msg_pong(nonce=00000005)
+2025-09-25T16:50:08.627750Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11002: msg_inv(inv=[CInv(type=WTX hash=6f42fab1551800cfdb580b9409620bedd32c1c8b0fb27f2fc7860218d8537879)])
+2025-09-25T16:50:08.627922Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11002: msg_getdata(inv=[CInv(type=WTX hash=6f42fab1551800cfdb580b9409620bedd32c1c8b0fb27f2fc7860218d8537879)])
+2025-09-25T16:50:08.628278Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11002: msg_tx(tx=CTransaction(version=2 vin=[CTxIn(prevout=COutPoint(hash=63cc9f58ff3bbbf1a8f7f60c9f369be53823a2040c8f34288e01bcd4aeae6f8f n=0) scriptSig= nSequence=0)] vout=[CTxOut(nValue=24.99999926 scriptPubKey=51202913b252fe537830f843bfdc5fa7d20ba48639a87c86ff837b92d083c55ad7c1), CTxOut(nValue=24.99999926 scriptPubKey=51202913b252fe537830f843bfdc5fa7d20ba48639a87c86ff837b92d083c55ad7c1)] wit=CTxWitness(CScriptWitness(51,c00000000000000000000000000000000000000000000000000000000000000001)) nLockTime=... (msg truncated)
+2025-09-25T16:50:08.630882Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11001: msg_inv(inv=[CInv(type=WTX hash=6f42fab1551800cfdb580b9409620bedd32c1c8b0fb27f2fc7860218d8537879)])
+2025-09-25T16:50:08.631008Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11001: msg_getdata(inv=[CInv(type=WTX hash=6f42fab1551800cfdb580b9409620bedd32c1c8b0fb27f2fc7860218d8537879)])
+2025-09-25T16:50:08.631650Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11001: msg_tx(tx=CTransaction(version=2 vin=[CTxIn(prevout=COutPoint(hash=63cc9f58ff3bbbf1a8f7f60c9f369be53823a2040c8f34288e01bcd4aeae6f8f n=0) scriptSig= nSequence=0)] vout=[CTxOut(nValue=24.99999926 scriptPubKey=51202913b252fe537830f843bfdc5fa7d20ba48639a87c86ff837b92d083c55ad7c1), CTxOut(nValue=24.99999926 scriptPubKey=51202913b252fe537830f843bfdc5fa7d20ba48639a87c86ff837b92d083c55ad7c1)] wit=CTxWitness(CScriptWitness(51,c00000000000000000000000000000000000000000000000000000000000000001)) nLockTime=... (msg truncated)
+2025-09-25T16:50:08.632594Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11000: msg_inv(inv=[CInv(type=WTX hash=6f42fab1551800cfdb580b9409620bedd32c1c8b0fb27f2fc7860218d8537879)])
+2025-09-25T16:50:08.632692Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11000: msg_getdata(inv=[CInv(type=WTX hash=6f42fab1551800cfdb580b9409620bedd32c1c8b0fb27f2fc7860218d8537879)])
+2025-09-25T16:50:08.633726Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11000: msg_tx(tx=CTransaction(version=2 vin=[CTxIn(prevout=COutPoint(hash=63cc9f58ff3bbbf1a8f7f60c9f369be53823a2040c8f34288e01bcd4aeae6f8f n=0) scriptSig= nSequence=0)] vout=[CTxOut(nValue=24.99999926 scriptPubKey=51202913b252fe537830f843bfdc5fa7d20ba48639a87c86ff837b92d083c55ad7c1), CTxOut(nValue=24.99999926 scriptPubKey=51202913b252fe537830f843bfdc5fa7d20ba48639a87c86ff837b92d083c55ad7c1)] wit=CTxWitness(CScriptWitness(51,c00000000000000000000000000000000000000000000000000000000000000001)) nLockTime=... (msg truncated)
+2025-09-25T16:50:08.633814Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11000: msg_inv(inv=[CInv(type=WTX hash=ff8a350d393b9dced2ecce6ac531ea8cc1f38913c7a215064c91363f5d0a2a31)])
+2025-09-25T16:50:08.633877Z TestFramework.p2p (DEBUG): Send message to 127.0.0.1:11000: msg_getdata(inv=[CInv(type=WTX hash=ff8a350d393b9dced2ecce6ac531ea8cc1f38913c7a215064c91363f5d0a2a31)])
+2025-09-25T16:50:08.634215Z TestFramework.p2p (DEBUG): Received message from 127.0.0.1:11000: msg_tx(tx=CTransaction(version=2 vin=[CTxIn(prevout=COutPoint(hash=b1f9928bc80529cc8e42dca1c51e68ff8d5697ca8bc14e0ba7dd2e374024dc47 n=1) scriptSig= nSequence=0), CTxIn(prevout=COutPoint(hash=b1f9928bc80529cc8e42dca1c51e68ff8d5697ca8bc14e0ba7dd2e374024dc47 n=0) scriptSig= nSequence=0)] vout=[CTxOut(nValue=49.99992452 scriptPubKey=51202913b252fe537830f843bfdc5fa7d20ba48639a87c86ff837b92d083c55ad7c1)] wit=CTxWitness(CScriptWitness(51,c0000000000000000000000000000000000000000000000000000000000000000... (msg truncated)
+2025-09-25T16:50:08.676207Z TestFramework.p2p (DEBUG): Closed connection to: 127.0.0.1:11000
+2025-09-25T16:50:08.678067Z TestFramework.p2p (DEBUG): Closed connection to: 127.0.0.1:11001
+2025-09-25T16:50:08.679468Z TestFramework.p2p (DEBUG): Closed connection to: 127.0.0.1:11002
+2025-09-25T16:50:08.680735Z TestFramework.p2p (DEBUG): Closed connection to: 127.0.0.1:11003
+2025-09-25T16:50:08.681482Z TestFramework (INFO): Submit full packages to node0
+2025-09-25T16:50:08.686605Z TestFramework (INFO): Wait for mempools to sync
+2025-09-25T16:50:15.791343Z TestFramework (INFO): --DEBUG-- finish mempools to sync
+2025-09-25T16:50:15.791721Z TestFramework (DEBUG): Closing down network thread
+2025-09-25T16:50:15.847318Z TestFramework (INFO): Stopping nodes
+2025-09-25T16:50:15.847729Z TestFramework.node0 (DEBUG): Stopping node
+2025-09-25T16:50:15.849782Z TestFramework.node1 (DEBUG): Stopping node
+2025-09-25T16:50:15.852233Z TestFramework.node2 (DEBUG): Stopping node
+2025-09-25T16:50:15.853570Z TestFramework.node3 (DEBUG): Stopping node
+2025-09-25T16:50:16.062522Z TestFramework.node0 (DEBUG): Node stopped
+2025-09-25T16:50:16.118729Z TestFramework.node1 (DEBUG): Node stopped
+2025-09-25T16:50:16.118956Z TestFramework.node2 (DEBUG): Node stopped
+2025-09-25T16:50:16.119083Z TestFramework.node3 (DEBUG): Node stopped
+2025-09-25T16:50:16.119166Z TestFramework (WARNING): Not cleaning up dir /tmp/test_runner_₿_🏃_20250925_125000/p2p_1p1c_network_0
+2025-09-25T16:50:16.119303Z TestFramework (INFO): Tests successful

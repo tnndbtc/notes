@@ -1,0 +1,36 @@
+Tested https://github.com/bitcoin-core/bitcoin-devwiki/wiki/30.0-Release-Candidate-Testing-Guide/#11-datacarriersize-increase
+
+Modified bitcoin.conf:
+regtest=1
+daemon=1
+datadir=/tmp/30-rc-test
+
+# Options for regtest
+[regtest]
+rpcport=18443
+datacarriersize=83
+
+alias bcli30='/Users/user/Downloads/tmp/bitcoin-30.0rc1/bin/bitcoin-cli -conf=/Users/user/Downloads/tmp/bitcoin-30.0rc1/bitcoin.conf'
+
+% bitcoin-30.0rc1/bin/bitcoind -conf=/Users/user/Downloads/tmp/bitcoin-30.0rc1/bitcoin.conf
+Warning: Options '-datacarrier' or '-datacarriersize' are set but are marked as deprecated and are expected to be removed in a future version.
+Bitcoin Core starting
+
+% bcli30 testmempoolaccept "[\"$tx_op_return_signed\"]"
+[
+  {
+    "txid": "e960124b180b883a6e7620b63e1f51f73ae0365e159c2a9d9f27fd9ad9845351",
+    "wtxid": "62ed297da17d63d73e38276a92b2c9618f453de12b0fe47a6d997ec240aeda39",
+    "allowed": false,
+    "reject-reason": "datacarrier",
+    "reject-details": "datacarrier"
+  }
+]
+
+% bcli30 stop
+
+% bitcoin-30.0rc1/bin/bitcoind -conf=/Users/user/Downloads/tmp/bitcoin-30.0rc1/bitcoin.conf
+
+% bcli30 testmempoolaccept "[\"$tx_op_return_signed\"]" | jq -r ".[0].allowed"
+false
+
