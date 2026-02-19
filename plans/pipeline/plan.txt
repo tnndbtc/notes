@@ -1,0 +1,415 @@
+# Automated Narrative → Video System  
+## Master Plan v1.2 (Source of Truth)
+
+---
+
+# 0. Answer to Repo Structure Question
+
+Yes: this plan must specify repo structure (or at least a recommended structure and boundaries), because repo boundaries enforce product boundaries. Without this, “trend/media/video/orchestrator/canon” will drift into each other and become hard to scale or productize.
+
+---
+
+# 1. Purpose
+
+This document defines the architecture, contracts, compute policy, repo structure, and productization boundaries for a system that:
+
+1) Generates long-form narrative content (novels / episodic stories)  
+2) Converts narrative into film-ready structure  
+3) Produces preview videos locally and deterministically  
+4) Optionally upgrades the same episode into high-quality cinematic video using external AI providers  
+5) Maintains continuity across episodes and seasons  
+6) Optimizes cost by defaulting to local compute whenever feasible  
+7) Keeps components separable so multiple parts can become standalone products/services
+
+This document is the single source of truth.  
+All implementation decisions must follow it.
+
+---
+
+# 2. Design Principles
+
+## Determinism First
+The system must always produce a working preview video locally, with no dependency on external providers.
+
+## Upgrade Without Rewrite
+Upgrading quality must not require regenerating story, canon, or timing.
+
+## Canon Over Generation
+Generated content never defines truth. Canon Store defines truth.
+
+## Structured Data Over Text Parsing
+No module should interpret freeform prose from another module. Modules exchange JSON schemas only.
+
+## Resume Anywhere
+Every stage is restartable from stored artifacts with idempotent jobs.
+
+## Local-First Cost Control
+Every feature must have a local execution path. External AI is enhancement only.
+
+## Product Boundaries by Contract
+If a component can be fed by “any client” via a stable schema, it is productizable.
+
+---
+
+# 3. Recommended Repository Structure (and Why)
+
+The goal is to keep “platform components” cleanly separable.
+
+## 3.1 Current Repos (Existing)
+- trend/  (Narrative Intelligence Layer)
+- media/  (Asset Acquisition Layer)
+- video/  (Rendering Layer)
+
+## 3.2 New Repo (Required)
+- orchestrator/  (Pipeline Brain + schemas + artifact registry client + job routing)
+
+## 3.3 Optional Repo Split (If/When Productizing)
+- world-engine/     (standalone writing/continuity product; may be trend evolved)
+- video-engine/     (standalone render + media-resolve product; may merge media+video)
+- canon-store/      (standalone canon DB + validation service; optional)
+- validator/        (canon gate + policy enforcement; optional, can live in canon-store)
+- asset-resolver/   (standalone asset resolution service; optional, can live in video-engine)
+- schemas/          (pure schema package shared across repos if desired)
+
+Rule of thumb:
+- If it has a public API boundary: consider its own repo.
+- If it’s purely internal glue: keep it in orchestrator.
+
+---
+
+# 4. High Level Pipeline (Artifact Boundaries)
+
+IDEA  
+→ Story Arc (Artifact)  
+→ Episode Plan (Artifact)  
+→ Script (Artifact)  
+→ ShotList (Artifact)  
+→ AssetManifest (Artifact)  
+→ RenderPlan (Artifact)  
+→ Preview Render Output (Artifact; Local Required)  
+→ (Optional) HQ Render Output (Artifact; External Optional)  
+→ Publish
+
+Each arrow must be a durable storage checkpoint.
+
+---
+
+# 5. Core Data Contracts (Versioned Schemas)
+
+All schemas are versioned. No breaking changes without version bump.
+
+## 5.1 Project
+Global settings and cost policy.
+- id, title, genre, visual_style, target_duration
+- render_profiles
+- continuity_mode
+- cost_policy
+
+## 5.2 Canon (Structured Truth)
+- characters, locations, world_rules, relationships
+- timeline_events, persistent_states
+Canon changes only via CanonDiff.
+
+## 5.3 CanonDiff
+- added_facts, modified_facts, removed_facts
+- justification and provenance
+- validation results
+
+## 5.4 Episode
+- episode_number, arc_reference
+- summary, new_facts, unresolved_threads
+
+## 5.5 Script
+Scene-based screenplay structure.
+- scenes: location/time, dialogue w speaker_id, actions, emotional tags
+No camera instructions.
+
+## 5.6 ShotList
+Film-ready breakdown.
+Per shot:
+- duration, camera framing/movement, characters, expressions/poses
+- environment notes, action beats
+- audio intent (VO refs, SFX tags, music mood)
+
+## 5.7 AssetManifest
+Derived requirements from ShotList.
+- required character packs, backgrounds, props
+- VO line items (speaker_id, text, emotion/pacing tags)
+- SFX/music needs
+No provider references.
+
+## 5.8 RenderPlan
+Maps AssetManifest to actual sources + profile.
+- profile: preview_local | standard_local | hq_providerX
+- resolution/aspect/fps
+- resolved asset URIs + fallbacks
+- timing lock hash reference (from ShotList)
+
+## 5.9 RenderOutput
+- final video path/URI
+- captions path/URI
+- audio stems path/URI (optional)
+- hashes, provenance links, lineage references
+
+---
+
+# 6. Canon & Continuity System (Platform-Critical)
+
+Two layers:
+
+## 6.1 Structured Canon Store (Truth Layer)
+Hard facts and rules. All “truth queries” come from here.
+
+## 6.2 Vector Memory (Recall Layer)
+Semantic recall for richness (minor details, tone, vibe). Never authoritative.
+
+## 6.3 Canon Gate (Continuity Validator)
+Before finalizing Script and before approving CanonDiff:
+1) Compare proposed facts vs Canon
+2) Reject contradictions (or flag for human review)
+3) Auto-repair if feasible (rewrite script segments, not canon)
+4) Persist CanonDiff only if approved
+
+## 6.4 Episode Context Assembly
+Every generation step gets a strict context pack:
+- Canon snapshot (relevant subset)
+- Relevant past events (retrieved + structured)
+- Last-episode summary + unresolved threads
+No module reads raw old scripts directly.
+
+---
+
+# 7. Narrative Generation Flow (trend / world-engine)
+
+Arc Generator  
+→ Episode Planner  
+→ Script Generator  
+→ Continuity Editor (Canon Gate pre-check)  
+→ CanonDiff Proposer  
+→ Canon Gate Approver  
+→ Script Finalizer
+
+Outputs must pass Canon Gate.
+
+---
+
+# 8. Film Adaptation Flow (Script → ShotList)
+
+Script Adapter  
+→ Scene Breakdown  
+→ Shot Planner  
+→ Emotional Tagger  
+→ Timing Estimator  
+→ ShotList Finalizer (locks timing)
+
+ShotList timing is LOCKED after approval and becomes the timeline authority for all renders.
+
+---
+
+# 9. Media Acquisition Flow (media / asset-resolver / video-engine)
+
+Asset Resolver reads AssetManifest and returns resolved assets.
+
+Priority order:
+1) Local asset library
+2) Cached generated assets
+3) External search sources (configurable + rights-aware)
+4) Generative fallback (local if feasible; otherwise external with budget)
+
+All results must include licensing/provenance metadata.
+
+---
+
+# 10. Rendering Flow (video / video-engine)
+
+## 10.1 Preview Render (Local Required)
+- deterministic
+- ffmpeg based
+- captions required
+- stable timing and repeatable templates
+- renders even with placeholders
+
+## 10.2 Standard Render (Local Preferred)
+- higher resolution
+- better local assets
+- improved motion templates
+
+## 10.3 HQ Render (External Optional)
+- per-shot replacement (or per-scene)
+- preserves timing and audio alignment
+- does NOT change canon, script, or shot durations
+
+---
+
+# 11. Render Profiles (Upgrade System)
+
+- preview_local: always works locally
+- standard_local: better local assets, still local
+- hq_providerX: external generation to replace preview clips
+
+Render profile ONLY changes RenderPlan, never Script/ShotList/Canon.
+
+---
+
+# 12. Local vs External Routing Policy (Cost/Quality Control)
+
+The orchestrator decides routing per task using cost_policy, current budgets, and availability.
+
+## 12.1 Always Local (Required for System Correctness)
+- Canon Store operations (read/write)
+- Canon Gate validation
+- Episode planning + script generation (using feasible local LLM)
+- Shot planning + timing lock
+- Preview render stitching + captions + loudness normalization
+- Artifact registry + lineage tracking
+
+## 12.2 Prefer Local (Fallback External Allowed)
+- image generation for storyboards/background plates
+- TTS voice generation (baseline quality)
+- music beds and SFX selection/generation
+Fallback external allowed only when explicitly enabled and budgeted.
+
+## 12.3 External Optional Only (HQ Enhancements)
+- cinematic text-to-video / diffusion video
+- premium TTS voice acting
+- photoreal animation, advanced motion
+External tasks must not modify canon or timing.
+
+## 12.4 Budget Enforcement
+- Each run has a max budget.
+- External stages require explicit approval policy (auto/threshold/manual).
+- If external fails, pipeline falls back to preview_local output.
+
+---
+
+# 13. Scheduling & Queues
+
+Queues separated by resource type:
+- cpu_queue: stitching, validation, ffmpeg
+- local_ai_queue: local LLM reasoning/writing
+- media_queue: search, retrieval, caching, licensing checks
+- external_ai_queue: HQ providers (rate limited + budgeted)
+
+Jobs must be idempotent and restartable.
+
+---
+
+# 14. Artifact Registry (Reproducibility Backbone)
+
+Every stage produces artifacts stored with:
+- hash
+- schema version
+- parent references
+- creation parameters
+- compute origin (local/external)
+- licensing/provenance (where applicable)
+
+This enables: rerun, diff, audit, and “upgrade later”.
+
+---
+
+# 15. Quality Gates (Automated QA)
+
+Before publish:
+- Canon/Continuity Check
+- Missing Asset Check (must have fallbacks)
+- Runtime/Pacing Check (matches target window)
+- Caption Sync Check
+- Audio Loudness / Ducking Check
+- Rights/License Check for external assets (if used)
+
+Any failure blocks publish unless explicitly overridden.
+
+---
+
+# 16. Observability & Cost Tracking
+
+Track per run:
+- stage timings
+- retries/failures
+- local vs external usage
+- token usage (if applicable)
+- provider costs
+- cache hit rates
+
+Minimum: a run summary JSON + logs per stage.
+
+---
+
+# 17. Failure Rules
+
+- HQ render failure → fallback to preview_local output
+- Asset missing → placeholder + flag + continue
+- Canon conflict → block finalization (no publish)
+- Provider unavailable → degrade gracefully (no pipeline halt)
+
+---
+
+# 18. Productization Map (What Can Be Standalone Products)
+
+This project intentionally supports multiple product surfaces.
+
+## 18.1 Video Engine (Highly Productizable)
+A “Render Package” in → video out platform.
+- Inputs: ShotList + AssetManifest + RenderPlan
+- Outputs: RenderOutput
+No story intelligence inside.
+
+## 18.2 Writing / World Engine (Productizable if canon-first)
+A persistent world reasoning platform.
+- Inputs: Canon + goals + constraints
+- Outputs: Script + CanonDiff
+No media/render awareness inside.
+
+## 18.3 Canon Store (Productizable Infrastructure)
+Truth layer for long-running AI systems.
+- Canon CRUD + CanonDiff + snapshots
+
+## 18.4 Continuity Validator / Canon Gate (Productizable)
+Policy/truth enforcement that blocks contradictions and proposes repairs.
+
+## 18.5 Asset Resolver (Productizable)
+Find vs generate vs reuse decision engine with caching + licensing.
+
+## 18.6 Orchestrator / Pipeline Runner (Productizable)
+Resumable, artifact-based AI workflow engine with deterministic outputs.
+
+Rule: If the component can be fed by “any client” via stable schema, it can be offered as a product.
+
+---
+
+# 19. Development Phases (Milestones)
+
+Phase 1 – Deterministic preview pipeline end-to-end  
+- Script → ShotList → AssetManifest → preview_local render
+
+Phase 2 – Canon enforcement and continuity gates  
+- Canon Store + CanonDiff + Canon Gate integrated
+
+Phase 3 – Asset resolver + caching + licensing  
+- AssetManifest → resolved assets with provenance
+
+Phase 4 – HQ provider integration + upgrade workflow  
+- Replace preview clips with HQ clips while preserving timing
+
+Phase 5 – Scale batching + cost optimization  
+- queue tuning, cache optimization, run dashboards
+
+Each phase must produce working videos.
+
+---
+
+# 20. Definition of Done
+
+System can:
+- Generate multi-episode story
+- Maintain continuity via Canon Store + Gate
+- Produce preview videos locally and deterministically
+- Upgrade episodes to HQ video without rewriting story or timing
+- Re-render identical results from stored artifacts
+- Operate within configurable cost and routing policies
+- Keep major components separable for productization
+
+---
+
+END OF DOCUMENT
