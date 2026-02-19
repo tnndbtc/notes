@@ -1,0 +1,15 @@
+{
+  "Script": {
+    "scenes": [
+      {
+        "id": "scene_1",
+        "location": "Empty bus stop at night",
+        "characters": ["Alex", "Rin"],
+        "dialogue": [
+          { "character": "Alex", "line": "You came." },
+          { "character": "Rin", "line": "I said I would." }
+        ]
+      }
+    ]
+  }
+}

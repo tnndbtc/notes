@@ -1,0 +1,33 @@
+{
+  "status": "VALID_WITH_WARNINGS",
+  "schema_versions": {
+    "shotlist": "shotlist@1",
+    "assetmanifest": "assetmanifest@1",
+    "renderoutput": "renderoutput@1"
+  },
+  "validation": {
+    "identity_links": "pass",
+    "timing_lock": "warn",
+    "asset_coverage": "pass",
+    "totals": "pass",
+    "renderoutput_structure": "pass"
+  },
+  "warnings": [
+    {
+      "code": "RENDEROUTPUT_MISSING_TIMING_LOCK_HASH",
+      "message": "RenderOutput does not include timing_lock_hash; cannot prove rendered artifacts correspond to the same locked timing inputs as ShotList/AssetManifest."
+    }
+  ],
+  "stages_executed": [
+    "cross_artifact_linking",
+    "timing_integrity_check",
+    "asset_reference_validation",
+    "totals_verification",
+    "renderoutput_validation"
+  ],
+  "determinism": {
+    "timing_lock_hash_consistent_between_inputs": true,
+    "render_tied_to_lock": false
+  },
+  "ready_for_next_stage": true
+}

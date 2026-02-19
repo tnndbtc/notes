@@ -1,0 +1,94 @@
+{
+  "schema_version": "assetmanifest@1",
+  "script_id": "script_scene_1",
+  "shotlist_id": "sl_script_scene_1",
+  "manifest_id": "am_script_scene_1",
+  "timing_lock_hash": "we1|timing_v1|wpm_dialogue=160|wpm_narration=150|action_wps=2.5|min=1.0|max=8.0|scene_1|Empty bus stop at night|Alex:You came.|Rin:I said I would.",
+  "local_roots": {
+    "assets_root": "assets",
+    "placeholders_root": "assets/placeholders"
+  },
+  "characters": [
+    {
+      "character_id": "char_alex",
+      "name": "Alex",
+      "portrait_ref": {
+        "asset_id": "img_char_alex_portrait_v1",
+        "type": "image",
+        "source": "placeholder",
+        "local_path": "assets/placeholders/characters/char_alex_portrait.png"
+      }
+    },
+    {
+      "character_id": "char_rin",
+      "name": "Rin",
+      "portrait_ref": {
+        "asset_id": "img_char_rin_portrait_v1",
+        "type": "image",
+        "source": "placeholder",
+        "local_path": "assets/placeholders/characters/char_rin_portrait.png"
+      }
+    }
+  ],
+  "backgrounds": [
+    {
+      "background_id": "bg_scene_1_empty_bus_stop_at_night",
+      "scene_slug": "scene_1",
+      "description": "Empty bus stop at night",
+      "image_ref": {
+        "asset_id": "img_bg_scene_1_empty_bus_stop_at_night_v1",
+        "type": "image",
+        "source": "placeholder",
+        "local_path": "assets/placeholders/backgrounds/bg_scene_1_empty_bus_stop_at_night.png"
+      }
+    }
+  ],
+  "voice_lines": [
+    {
+      "voice_line_id": "vl_sh_0002_alex_001",
+      "shot_id": "sh_0002",
+      "character_id": "char_alex",
+      "text": "You came.",
+      "time_range_s": { "start": 2.0, "end": 3.0 },
+      "audio_ref": {
+        "asset_id": "aud_vl_sh_0002_alex_001_v1",
+        "type": "audio",
+        "source": "placeholder",
+        "local_path": "assets/placeholders/audio/vl_sh_0002_alex_001.wav"
+      }
+    },
+    {
+      "voice_line_id": "vl_sh_0003_rin_001",
+      "shot_id": "sh_0003",
+      "character_id": "char_rin",
+      "text": "I said I would.",
+      "time_range_s": { "start": 3.0, "end": 4.5 },
+      "audio_ref": {
+        "asset_id": "aud_vl_sh_0003_rin_001_v1",
+        "type": "audio",
+        "source": "placeholder",
+        "local_path": "assets/placeholders/audio/vl_sh_0003_rin_001.wav"
+      }
+    }
+  ],
+  "shot_asset_refs": [
+    {
+      "shot_id": "sh_0001",
+      "background_id": "bg_scene_1_empty_bus_stop_at_night",
+      "character_ids": ["char_alex", "char_rin"],
+      "voice_line_ids": []
+    },
+    {
+      "shot_id": "sh_0002",
+      "background_id": "bg_scene_1_empty_bus_stop_at_night",
+      "character_ids": ["char_alex"],
+      "voice_line_ids": ["vl_sh_0002_alex_001"]
+    },
+    {
+      "shot_id": "sh_0003",
+      "background_id": "bg_scene_1_empty_bus_stop_at_night",
+      "character_ids": ["char_rin"],
+      "voice_line_ids": ["vl_sh_0003_rin_001"]
+    }
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "schema_version": "shotlist@1",
+  "script_id": "script_scene_1",
+  "shotlist_id": "sl_script_scene_1",
+  "timing_lock_hash": "we1|timing_v1|wpm_dialogue=160|wpm_narration=150|action_wps=2.5|min=1.0|max=8.0|scene_1|Empty bus stop at night|Alex:You came.|Rin:I said I would.",
+  "timing_model": {
+    "wpm_dialogue": 160,
+    "wpm_narration": 150,
+    "action_wps": 2.5,
+    "min_shot_s": 1.0,
+    "max_shot_s": 8.0
+  },
+  "shots": [
+    {
+      "shot_id": "sh_0001",
+      "source_unit_ids": ["scene_1"],
+      "scene_slug": "scene_1",
+      "order": 1,
+      "shot_type": "ESTABLISHING",
+      "camera": {
+        "movement": "STATIC",
+        "framing_hint": "Wide establishing of the bus stop"
+      },
+      "subjects": ["Alex", "Rin"],
+      "action_summary": "Empty bus stop at night. Two figures wait under weak light.",
+      "dialogue": [],
+      "duration_s": 2.0,
+      "time_range_s": { "start": 0.0, "end": 2.0 }
+    },
+    {
+      "shot_id": "sh_0002",
+      "source_unit_ids": ["scene_1"],
+      "scene_slug": "scene_1",
+      "order": 2,
+      "shot_type": "CLOSE",
+      "camera": {
+        "movement": "STATIC",
+        "framing_hint": "Close on Alex"
+      },
+      "subjects": ["Alex"],
+      "action_summary": "Alex acknowledges Rin's arrival.",
+      "dialogue": [{ "character": "Alex", "line": "You came." }],
+      "duration_s": 1.0,
+      "time_range_s": { "start": 2.0, "end": 3.0 }
+    },
+    {
+      "shot_id": "sh_0003",
+      "source_unit_ids": ["scene_1"],
+      "scene_slug": "scene_1",
+      "order": 3,
+      "shot_type": "CLOSE",
+      "camera": {
+        "movement": "STATIC",
+        "framing_hint": "Close on Rin"
+      },
+      "subjects": ["Rin"],
+      "action_summary": "Rin answers calmly.",
+      "dialogue": [{ "character": "Rin", "line": "I said I would." }],
+      "duration_s": 1.5,
+      "time_range_s": { "start": 3.0, "end": 4.5 }
+    }
+  ],
+  "totals": {
+    "duration_s": 4.5,
+    "shot_count": 3
+  }
+}

@@ -1,0 +1,22 @@
+Here’s the clean repo mapping (aligned with your Master Plan v1.2 ownership table).
+	•	Agent A — Orchestrator
+	•	Work in: orchestrator/
+	•	Owns: RenderPackage contract, artifact registry, validators, routing/budget policy, run summaries, control-plane protocols.
+	•	Agent B — World Engine (Script → ShotList + timing_lock_hash)
+	•	Work in: world-engine/ (recommended)
+	•	If you haven’t finished the split yet: temporarily in trend/, but long-term keep world-engine separate since trend used to be crawler/UI.
+	•	Agent C — Renderer
+	•	Work in: video/
+	•	Owns: preview_local renderer, captions, RenderOutput, golden render tests.
+	•	Agent D — Canon Store + Canon Gate
+	•	Work in: world-engine/ (same repo as B)
+	•	Optional later split: canon-store/ if/when you productize.
+	•	Agent E — Media Resolver
+	•	Work in: media/
+	•	Owns: local asset resolution, placeholders, license/provenance metadata, caching later.
+	•	Agent F — Writing Agent
+	•	Work in: world-engine/ (or whatever repo generates Script)
+	•	In Phase 0 it can be a deterministic stub; later it can call LLMs.
+
+If you want the simplest structure right now:
+orchestrator/ + world-engine/ + media/ + video/ (4 repos). This keeps your parallel agents from colliding.

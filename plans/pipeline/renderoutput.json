@@ -1,0 +1,20 @@
+{
+  "checksums": {
+    "srt_sha256": "4583358035fa329b4ee55c56d9fa7e5d39c92dd9d25eaade77f2d11086af170c",
+    "video_sha256": "4b5d33a5e4281d92a9c1b555620d8920d9c524e4bd7e70433b8ad7c733ac444a"
+  },
+  "duration_ms": 4500,
+  "logs_path": "out/render.log",
+  "manifest_id": "am_script_scene_1",
+  "renderplan_id": "rp_script_scene_1_preview",
+  "schema_version": "renderoutput@1",
+  "script_id": "script_scene_1",
+  "shotlist_id": "sl_script_scene_1",
+  "srt_path": "out/preview_script_scene_1.srt",
+  "timeline": {
+    "fps": 30,
+    "height": 720,
+    "width": 1280
+  },
+  "video_path": "out/preview_script_scene_1.mp4"
+}
