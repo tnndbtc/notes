@@ -412,4 +412,346 @@ System can:
 
 ---
 
+# 21. Public API — RenderPackage v1 Contract
+(See also: Section 18.1 Video Engine, Section 5.8 RenderPlan, Section 11 Render Profiles)
+
+The Video Engine / Render Service exposes a single external request interface.
+Callers never send freeform prose — only validated JSON matching these schemas.
+
+## 21.1 RenderPackage Request Object (v1)
+- `request_id` — unique identifier for this render invocation (UUID)
+- `idempotency_key` — client-supplied deduplication key; safe to retry on network failure
+- `tenant_id` — required for multi-tenant deployments (see Section 23)
+- `render_profile` — one of: preview_local | standard_local | hq_providerX
+- `inputs` — structured object containing:
+  - `shotlist_ref` — URI or inline ShotList artifact
+  - `asset_manifest_ref` — URI or inline AssetManifest artifact
+  - `render_plan_ref` — URI or inline RenderPlan artifact
+- `desired_outputs` — list of requested outputs: video | captions | audio_stems | run_summary
+- `callbacks` — optional webhook URL(s) for async status updates
+- `logging_options` — trace level, redaction flags (see Section 24)
+
+## 21.2 RenderPackage Response Object (v1)
+- `request_id` — echoed from request
+- `status` — one of: queued | in_progress | completed | failed | degraded
+- `artifact_uris` — map of output name → URI (populated when completed)
+- `lineage_hashes` — map of artifact name → content hash
+- `run_summary` — structured object: stage timings, cost, cache hits, errors
+- `errors` — list of structured error objects (code, message, stage, recoverable flag)
+
+## 21.3 Contract Rules
+- Services never parse freeform prose; only validated JSON matching these schemas.
+- All inputs are refs (URIs) or inline schemas — never raw text strings.
+- Idempotent: replaying the same `idempotency_key` returns the cached result without re-running.
+- Render profile changes require a new request; they never mutate existing artifacts.
+
+---
+
+# 22. Provider Plugin Contract
+(See also: Section 11 Render Profiles, Section 10.3 HQ Render, Section 5.8 RenderPlan)
+
+All HQ providers (hq_providerX in RenderPlan) must implement this contract.
+The orchestrator routes through this interface; no provider is called directly.
+
+## 22.1 Capabilities Discovery
+Each provider exposes a capabilities manifest:
+- `provider_id` — unique slug (e.g., "runway_gen3", "kling_v1")
+- `max_clip_duration_sec` — hard cap per generation call
+- `supported_aspect_ratios` — list (e.g., ["16:9", "9:16", "1:1"])
+- `supported_fps` — list of integers (e.g., [24, 30])
+- `audio_support` — boolean
+- `image_to_video` — boolean
+- `text_to_video` — boolean
+- `max_resolution` — string (e.g., "1920x1080")
+
+## 22.2 Required Inputs Interface
+- `shot_ref` — reference to a single shot from ShotList (duration, framing, prompt hints)
+- `asset_refs` — optional image refs for reference frames or character consistency
+- `prompt_constraints` — structured prompt fields (no raw paragraphs): subject, motion, style, mood
+- `timing_lock_hash` — must match ShotList timing lock; provider may not alter shot duration
+
+## 22.3 Cost Estimation Interface
+Before execution, providers must expose a cost estimate call:
+- Input: shot_ref + render_profile
+- Output: estimated_cost_usd, estimated_duration_sec, confidence (low/medium/high)
+- Orchestrator uses this to enforce budget policy (see Section 12.4) and trigger approval gates (see Section 27)
+
+## 22.4 Retry & Backoff Semantics
+- Providers must classify errors as: `transient` | `rate_limit` | `content_rejected` | `fatal`
+- Transient + rate_limit: retry with exponential backoff (max 3 attempts, cap 60 sec)
+- Content rejected: surface to content safety gate (see Section 26); do not retry automatically
+- Fatal: log error, fallback to preview_local output, do not halt the pipeline
+
+## 22.5 Output Naming & Provenance
+- Outputs use deterministic naming: `{request_id}/{provider_id}/{shot_id}.mp4`
+- Each output artifact records: provider_id, model_version, generation timestamp, cost, input hashes
+- These feed directly into Artifact Registry (see Section 14)
+
+---
+
+# 23. Multi-Tenancy & Isolation Model
+(Applicable when productizing Video Engine, Canon Store, or Orchestrator — see Section 18)
+
+## 23.1 Minimum Viable Approach (MVP)
+- Per-tenant artifact storage namespace: `artifacts/{tenant_id}/...`
+- Per-tenant secrets scoped at the infrastructure level (separate secret paths, never shared env vars)
+- Soft quota limits per tenant: max concurrent jobs, max daily external AI spend, max storage
+- All logs tagged with `tenant_id`; log queries scoped by tenant — no cross-tenant log leakage
+
+## 23.2 Later Enhancements
+- Per-tenant encryption keys (envelope encryption for stored artifacts)
+- Per-tenant rate limiting enforced at API gateway layer
+- Configurable data retention and deletion policies: purge triggers removal of all artifacts, canon, and logs for that tenant
+- Tenant-level cost dashboards and usage reports
+
+## 23.3 Data Isolation Rules
+- No cross-tenant artifact references allowed
+- Canon Store must enforce tenant boundaries on all read and write paths
+- Shared infrastructure (queues, worker pools) is acceptable as long as artifact namespacing is strictly enforced
+
+---
+
+# 24. Security & Secrets Management Baseline
+
+## 24.1 Where Secrets Live
+- Development: `.env` file (never committed; must be in `.gitignore`)
+- Staging / Production: secrets vault (e.g., HashiCorp Vault, AWS Secrets Manager, or equivalent)
+- No secrets in code, committed config files, or log output — anywhere in the pipeline
+
+## 24.2 Least Privilege
+- Each service and worker has its own credentials scoped to only what it needs
+- External provider API keys scoped per service; no shared master keys across services
+- Storage access: read-only paths for consumers, read-write only for producers
+
+## 24.3 Rotation Policy
+- External provider keys: rotate on any suspected exposure; scheduled rotation every 90 days recommended
+- Internal service credentials: rotate on team member offboarding and on any breach indicator
+- Rotation must not require pipeline downtime (use versioned secrets with a grace period overlap)
+
+## 24.4 Log Redaction
+- All logging pipelines must strip: API keys, tokens, webhook URLs, and tenant PII before writing
+- Structured logging preferred (JSON); redaction applied at log-writer level, not ad hoc at call sites
+- Audit logs (cost events, canon changes, publish events) are retained separately from debug logs
+
+## 24.5 Dependency Pinning & Supply-Chain Scanning (Lightweight)
+- All dependencies pinned to exact versions in lock files (no floating `^` or `~` in production images)
+- Automated scanning: run a basic vulnerability scanner (e.g., `pip audit`, `npm audit`, `trivy`) in CI on every PR
+- Alert on high/critical CVEs; block merge on critical findings
+
+---
+
+# 25. Rights & Provenance Requirements
+(See also: Section 9 Media Acquisition, Section 14 Artifact Registry, Section 15 Quality Gates)
+
+## 25.1 Allowed Asset Source Categories
+- Explicitly purchased or licensed commercial assets (with a retrievable purchase record)
+- Open-license assets (CC0, CC-BY with attribution, or equivalent permissive license)
+- Locally generated assets (produced by the pipeline itself; no third-party rights claim applies)
+- Assets explicitly cleared via written agreement
+
+## 25.2 Minimum Metadata Fields (Per Asset)
+Every asset in AssetManifest and Artifact Registry must carry:
+- `license_type` — e.g., "CC0", "commercial_licensed", "generated_local", "proprietary_cleared"
+- `attribution` — required for CC-BY and similar; empty string for CC0 or generated assets
+- `purchase_record` — URI or reference to invoice or license document (for commercial assets)
+- `provider_or_model` — source tool, platform, or model (e.g., "ElevenLabs v2", "Stable Diffusion XL")
+- `retrieval_date` — ISO 8601 date of acquisition
+
+## 25.3 Redistribution Policy for Generated Assets
+- AI-generated assets must be reviewed for applicable model output license terms before redistribution
+- Default policy: generated assets are for internal pipeline use unless explicitly cleared for redistribution
+- `redistributable: true/false` flag in asset metadata; defaults to false
+
+## 25.4 Unknown License Handling
+- Assets with missing or unknown license metadata → **block from publish** (hard block, not a warning)
+- During asset resolution (Section 9): reject unknown-license assets before adding to AssetManifest
+- Quality Gate (Section 15) enforces this as a hard block at publish time
+- Manual override requires explicit `rights_override` flag and approver ID recorded in the artifact
+
+---
+
+# 26. Content Safety Policy & Enforcement Points
+
+## 26.1 Blocked Content Categories (High-Level)
+- Sexual or explicit content
+- Graphic violence beyond the project's configured rating threshold (set in Project config)
+- Hate speech, harassment, or content targeting protected groups
+- Illegal content (by jurisdiction of deployment)
+- Deceptive synthetic media that could constitute fraud or impersonation of real individuals
+
+## 26.2 Enforcement Stages
+Safety checks are applied at four mandatory points:
+
+| Stage                   | What is checked                              | Mode        |
+|-------------------------|----------------------------------------------|-------------|
+| Script generation       | Script content vs safety policy              | Fail closed |
+| Shot prompt generation  | Prompt fields in ShotList                    | Fail closed |
+| Asset retrieval         | Retrieved asset description + metadata       | Fail closed |
+| Final output QA         | Rendered output (metadata + optional frame scan) | Fail closed |
+
+## 26.3 Fail Closed vs Warn Only
+- **Fail closed** (default): safety violation blocks the pipeline stage; no output produced; error surfaced to operator
+- **Warn only** (opt-in, per project config): violation is logged and flagged but pipeline continues; publish is still blocked until manual review
+- Warn-only mode must be explicitly enabled in Project config (`safety_mode: warn_only`); default is `fail_closed`
+
+## 26.4 Provider-Side Rejections
+- If an HQ provider rejects a generation request for content reasons (see Section 22.4): classify as `content_rejected`, log, escalate to operator, do not retry
+- Never automatically reword prompts to bypass provider safety filtering
+
+---
+
+# 27. Human-in-the-Loop Checkpoints (Configurable)
+
+## 27.1 Available Checkpoints
+The pipeline supports optional human review gates at the following points:
+- **approve_canon_diff** — Review and approve proposed CanonDiff before it is committed to Canon Store
+- **approve_character_packs** — Review character asset packs before they are locked into AssetManifest
+- **approve_shotlist_timing_lock** — Review ShotList timing before it is locked (timing lock is irreversible without a full re-render)
+- **approve_external_spend** — Review estimated external provider cost before any external AI calls are dispatched
+
+## 27.2 Configuration Mechanism
+Checkpoints are toggled via Project config flags:
+```
+human_checkpoints:
+  approve_canon_diff: true           # default: true
+  approve_character_packs: false     # default: false
+  approve_shotlist_timing_lock: true # default: true
+  approve_external_spend: true       # default: true (when budget > threshold)
+```
+- When a checkpoint is enabled, the pipeline pauses and emits a review request (webhook, UI notification, or CLI prompt depending on deployment mode)
+- The pipeline resumes only when an explicit approval signal is received
+- Timeout policy: if no approval is received within a configurable window, the run is paused (not failed); it resumes on approval
+
+## 27.3 Audit Trail
+All human approval events are recorded in the Artifact Registry with: approver_id, timestamp, decision (approved/rejected), and optional reviewer notes.
+
+---
+
+# 28. Testing & CI/CD Requirements
+
+## 28.1 Required Test Types
+- **Schema validation unit tests** — every schema (ShotList, AssetManifest, RenderPlan, CanonDiff, RenderPackage) has roundtrip parse/serialize tests and rejection tests for invalid inputs
+- **Golden render test** — a small deterministic clip (≤10 shots, fixed seed assets) that must produce bit-identical output on every run; used to catch renderer regressions
+- **Continuity regression tests (canon gate)** — a curated set of known contradiction scenarios that the Canon Gate must correctly reject; and a set of valid diffs it must accept
+- **Provider mock / plugin contract tests** — each provider plugin is tested against a mock that enforces the full plugin contract (capabilities, cost estimate, retry behavior, output naming — see Section 22)
+- **Load / batch tests** — queue throughput test: N jobs submitted concurrently; verify completion rate, error rate, and timing within acceptable bounds (see Section 29 for targets)
+
+## 28.2 Minimal CI Plan
+On every PR:
+1. Lint (language-appropriate: ruff / eslint / golangci-lint / etc.)
+2. Schema validation unit tests
+3. Canon gate regression tests
+4. Provider contract tests (mocked)
+5. Dependency vulnerability scan (see Section 24.5)
+
+On merge to main:
+- Full test suite including golden render test
+- Artifact hash of golden output published to test registry for traceability
+
+---
+
+# 29. Performance Targets & Batching Strategy
+
+## 29.1 Preview Render Targets (preview_local profile)
+- Single episode (20–40 shots, ~10 min video): target completion in ≤ 15 minutes on reference hardware
+- Per-shot render time (ffmpeg stitch): ≤ 30 seconds per shot
+- TTS generation (local): ≤ 5 seconds per VO line
+- Canon gate validation: ≤ 10 seconds per episode
+
+## 29.2 Concurrency Goals
+- Worker pools sized per queue type (see Section 13):
+  - `cpu_queue`: 2–4 workers (CPU-bound; scale with cores)
+  - `local_ai_queue`: 1 worker per GPU/accelerator; queue depth ≤ 8
+  - `external_ai_queue`: configurable concurrency per provider (respect provider rate limits)
+- Target: ≤ 20% queue wait time as a fraction of total run time under normal load
+
+## 29.3 Caching Strategy
+- Cache keys: deterministic hash of inputs (artifact content hashes, never file paths or timestamps)
+- Cached artifact types: rendered shots, TTS audio, resolved assets, Canon snapshots
+- Eviction policy: LRU with configurable max size; time-based expiry for externally sourced assets (respect license terms)
+- Cache hit rate target: ≥ 60% for re-renders of the same episode with minor script changes
+
+## 29.4 Job Sizing Guidelines
+- Default granularity: **per-shot** jobs for rendering (enables partial re-render and fine-grained retry)
+- Batch to **per-scene** only when provider pricing strongly favors batching (e.g., minimum billable unit exceeds 1 shot)
+- Never batch across episodes — episode boundary equals artifact boundary
+
+---
+
+# 30. Versioning & Migration Policy for Schemas and Artifacts
+
+## 30.1 Semantic Versioning for Schemas
+- All schemas (ShotList, AssetManifest, RenderPlan, Canon, RenderPackage, etc.) follow semver: `MAJOR.MINOR.PATCH`
+- PATCH: non-breaking fixes (documentation, constraint clarification)
+- MINOR: backward-compatible additions (new optional fields, new enum values)
+- MAJOR: breaking changes (removed fields, renamed required fields, changed types)
+- Schema version is embedded in every artifact: `schema_version: "1.2.0"`
+
+## 30.2 Forward / Backward Compatibility Expectations
+- Readers must tolerate unknown fields (ignore gracefully) — this allows MINOR upgrades without requiring all readers to update simultaneously
+- Readers must NOT silently ignore missing required fields — surface a clear, actionable error
+- MAJOR version changes require a documented migration path before old artifacts are accepted by any service
+
+## 30.3 Re-Rendering Old Artifacts
+- Old artifacts are never mutated in place; re-render always creates new artifacts with the current schema version
+- Both old and new artifacts are retained in the Artifact Registry with a lineage link between them
+- Artifact Registry must preserve the original `schema_version` tag on every stored artifact indefinitely
+
+## 30.4 Migration Scripts vs Render Adapters
+- **Migration script**: transforms stored artifact data from schema vN to vN+1 without re-running pipeline stages; used for Canon, config, and metadata
+- **Render adapter**: re-runs a pipeline stage using original inputs to produce new-schema outputs; used for media artifacts where data cannot be losslessly transformed
+- Both must be idempotent and versioned alongside their respective schemas
+
+## 30.5 Mixed-Version Handling Rules
+- A pipeline run uses the schema version declared in its RenderPackage request
+- Input artifacts at an older MINOR version: accepted transparently (backward compatible)
+- Input artifacts at an older MAJOR version: pipeline rejects with a clear error message and migration instructions
+- Mixed schema versions within a single run (e.g., ShotList v1.x + AssetManifest v2.x) are allowed only within the same MAJOR version family
+
+---
+
+# 31. Reference Directory Layout (Per Repo)
+
+This is recommended guidance, not a hard requirement.
+Repos should converge toward this structure for consistency and discoverability.
+
+## 31.1 Shared Layout (All Repos)
+```
+/docs        — architecture notes, ADRs, runbooks, integration guides
+/schemas     — versioned JSON/YAML schema definitions and validators
+/tests       — all test types: unit, integration, golden, contract, load
+/examples    — sample inputs and outputs for each major schema and flow
+```
+
+## 31.2 Orchestrator Repo
+```
+/pipelines   — pipeline stage definitions and workflow DAGs
+/workers     — queue worker implementations (one subdirectory per queue type)
+/providers   — provider plugin implementations (one subdirectory per provider)
+/registry    — artifact registry client and lineage tracking
+```
+
+## 31.3 Narrative / World-Engine Repo (trend)
+```
+/generators  — arc, episode, and script generation modules
+/canon       — Canon Store client, CanonDiff handlers, Canon Gate
+/context     — episode context assembly logic
+```
+
+## 31.4 Media / Asset-Resolver Repo
+```
+/resolvers   — per-source resolvers (local library, cache, external search, generative)
+/rights      — license metadata validators and rights gate
+/cache       — asset cache management
+```
+
+## 31.5 Video / Render Repo
+```
+/renderers   — per-profile renderer implementations (preview_local, standard_local)
+/templates   — reusable ffmpeg or render templates
+/qa          — quality gate checks (caption sync, loudness, runtime pacing)
+```
+
+---
+
 END OF DOCUMENT
