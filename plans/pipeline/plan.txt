@@ -1028,4 +1028,73 @@ Collected by the Ops Agent (see Section 34.2) and reported to the Control Plane:
 
 ---
 
+# 38. Parallel Development Coordination Protocol
+(See also: Section 19.0 Phase 0 Workstreams, Section 28 Testing & CI/CD, Section 30 Versioning & Migration, Section 31 Directory Layout)
+
+Enables multiple agents or teams to develop concurrently without schema drift or cross-repo interference.
+All coordination is enforced through schema ownership, contract tests, and version control — not runtime coupling.
+
+## 38.1 Workstream Ownership (Source of Truth)
+Each artifact and schema has exactly one owning workstream. Only the owner may change its semantics.
+
+| Artifact / Schema                        | Owner Repo / Workstream                                    |
+|------------------------------------------|------------------------------------------------------------|
+| Canon, CanonDiff, Canon Gate             | trend / world-engine (or canon-store if split)             |
+| Script generation                        | trend / world-engine                                       |
+| ShotList + timing_lock_hash              | trend / world-engine (adaptation module)                   |
+| AssetManifest + resolver logic           | media / asset-resolver                                     |
+| RenderPlan + routing / budget policy     | orchestrator                                               |
+| RenderOutput + rendering templates       | video / video-engine                                       |
+| RenderPackage v1 API contract            | orchestrator (see Section 21)                              |
+| Control Plane + Ops Agent protocols      | orchestrator (or dedicated control-plane repo if created)  |
+
+Rule: a non-owning workstream may read and validate a schema but must never alter its required fields or semantics.
+If a workstream needs a change in another's schema, it opens a cross-team change request (see Section 38.6).
+
+## 38.2 Schema Change Control
+Any schema change must include:
+- Explicit version bump following the policy in Section 30.1 (PATCH / MINOR / MAJOR)
+- A backward compatibility statement (what older consumers must do)
+- Updated example artifacts in `/examples` (see Section 31.1)
+- Updated schema validation tests (see Section 28.1)
+
+Breaking changes (MAJOR version bump) additionally require:
+- Human approval before merge
+- A documented migration path or render adapter (see Section 30.4)
+- Coordinated release notes shared with all dependent workstreams before rollout
+
+## 38.3 Contract-First Development Rules
+- Agents implement against schema validators, not internal assumptions or shared memory
+- Agents must produce example artifacts (valid JSON/YAML) for every output schema they own, usable by other workstreams as test fixtures
+- No module may require parsing freeform prose from another module — all inter-module data is structured schema (see Section 2: Structured Data Over Text Parsing)
+- Stub implementations are acceptable at any stage, provided they emit schema-valid artifacts
+
+## 38.4 Integration Gates (Merge Requirements)
+Each repo must satisfy the following before merging to its main branch:
+- Schema validation tests pass for all owned output artifacts
+- At least one end-to-end contract test using example artifacts sourced from each directly-dependent repo
+- A golden artifact set covering Phase 0 (see Section 19.0 Acceptance Criteria) is present in `/examples` and passes validation
+- Merges are blocked if any contract test fails
+
+## 38.5 Parallel Execution Workflow
+Recommended sequence for each workstream agent to minimise blocking:
+
+- **Step 1 — Stubs**: implement modules that read inputs and write outputs to disk in the correct schema; internals may be trivial (templates, hardcoded values)
+- **Step 2 — Validate**: run schema validators and contract tests against example artifacts from other repos; fix any schema errors before proceeding
+- **Step 3 — Replace internals**: swap stub logic for real generation, resolution, or rendering logic without changing the output interface
+- **Step 4 — Optimise**: add caching, batching, and performance tuning as a final pass (see Section 29); these must not alter artifact schemas
+
+## 38.6 Definition of a Blocking Change
+A change is **blocking** (requires explicit approval and coordinated rollout) if it:
+- Alters required fields, field types, or removes fields in any schema defined in Section 5
+- Changes the timing authority model: `timing_lock_hash` generation or consumption (see Sections 8, 10, 19.0)
+- Changes the provider plugin contract interface (see Section 22)
+
+Non-blocking changes (can merge independently):
+- Adding new optional fields (MINOR bump)
+- Adding new enum values without removing existing ones
+- Internal implementation changes that do not alter schema outputs
+
+---
+
 END OF DOCUMENT
