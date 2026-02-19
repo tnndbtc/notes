@@ -842,4 +842,190 @@ Repos should converge toward this structure for consistency and discoverability.
 
 ---
 
+# 32. Control Plane (Management UI)
+(See also: Section 13 Scheduling & Queues, Section 14 Artifact Registry, Section 16 Observability & Cost Tracking)
+
+The Control Plane is a centralized dashboard and API that provides visibility and operational control over the system.
+It is purely an observer and command dispatcher — it never executes pipeline logic directly.
+The system must operate fully if the Control Plane is offline.
+
+## 32.1 Run Dashboard
+- Per-run view: run_id, site_id, tenant_id, current stage, elapsed time, errors, profile used
+- Stage-level breakdown: start time, duration, exit status, artifact URIs produced
+- Filter and search by: status, episode, tenant, site, date range
+
+## 32.2 Queue Dashboard
+- Real-time depth per queue type (cpu_queue, local_ai_queue, media_queue, external_ai_queue — see Section 13)
+- Per-worker status: idle / active / draining / offline
+- Queue throughput trend (jobs/hour) and estimated drain time
+
+## 32.3 Artifact Lineage Viewer
+- Visual graph of artifact parent-child relationships (see Section 14)
+- Per-artifact detail: hash, schema_version, compute origin, cost, lineage links
+- Diff view between two runs of the same episode
+
+## 32.4 Cost Dashboard
+- Per-run cost breakdown: local compute vs external provider spend
+- Per-provider spend: tokens used by model/provider, cost per call, cumulative spend
+- Cost per episode and cost per season rollups
+- Budget threshold indicators (see Section 12.4)
+
+## 32.5 Warning Panel
+Surfaced alerts and soft failures:
+- Canon Gate blocks (see Section 6.3)
+- Repeated retries on any stage (threshold configurable)
+- Provider outages or sustained high failure rates (see Section 22.4)
+- Budget threshold warnings before hard limit is reached
+- Disk pressure or host health degradation (see Section 37)
+
+## 32.6 Drill-Down Views
+- **Run view**: full stage timeline, logs per stage, artifacts produced
+- **Stage view**: inputs, outputs, errors, retry history
+- **Host view**: current load, queue worker status, recent job history (see Section 37)
+
+## 32.7 Control Plane Rules
+- Does not execute pipeline stages or write artifacts directly
+- Sends signed command requests to Ops Agents on each host (see Section 34)
+- Receives telemetry from workers and the artifact registry passively
+- Must degrade gracefully: if Control Plane is unreachable, local pipeline execution continues unaffected
+
+---
+
+# 33. Alerts & Notifications
+(See also: Section 16 Observability & Cost Tracking, Section 32 Control Plane, Section 37 Host Health Model)
+
+## 33.1 Alert Categories
+| Alert Type             | Trigger Condition                                               |
+|------------------------|-----------------------------------------------------------------|
+| `job_failed`           | A pipeline stage exits with a non-recoverable error            |
+| `excessive_retries`    | Retry count for a stage exceeds configured threshold           |
+| `provider_unavailable` | External provider returns fatal errors for N consecutive calls |
+| `budget_exceeded`      | Run or daily spend crosses configured hard limit               |
+| `canon_blocked`        | Canon Gate rejects a finalization attempt                      |
+| `host_down`            | Host heartbeat not received within expected interval           |
+| `disk_full`            | Disk usage on any host exceeds configured high-water mark      |
+
+## 33.2 Notification Requirements
+- Every alert message must include: `run_id`, `stage`, `site_id`, `alert_type`, `severity`, `timestamp`
+- Deep link to the relevant Control Plane view (run, host, or queue — see Section 32)
+- At least one phone-friendly delivery channel (push notification, messaging app, or email — implementation flexible)
+- Multiple channels may be configured; routing rules configurable per alert category and severity
+
+## 33.3 Reliability Rules
+- **Deduplication window**: identical alert (same type + run_id + stage) suppressed for a configurable window (default: 5 minutes)
+- **Severity thresholds**: configurable per category; below threshold → logged only, not dispatched
+- Alert delivery must not depend on the pipeline being healthy (use a separate lightweight emitter)
+
+---
+
+# 34. Safe Remote Operations
+(See also: Section 17 Failure Rules, Section 23 Multi-Tenancy & Isolation, Section 32 Control Plane)
+
+Operators trigger actions from the Control Plane. All actions are executed by a lightweight **Ops Agent** running on each host — no direct remote shell access from the UI.
+
+## 34.1 Allowed Operator Actions
+- **restart worker** — gracefully stop and restart a specific queue worker process
+- **drain worker** — stop accepting new jobs; finish current job; then go idle
+- **pause queue** — halt job dispatch for a named queue; jobs remain queued
+- **resume queue** — re-enable job dispatch for a paused queue
+- **cancel run** — mark a run as cancelled; stop all in-flight stages for that run_id
+- **retry stage** — re-enqueue a specific failed stage for a given run_id
+
+## 34.2 Ops Agent
+- Runs as a lightweight process on every host in the fleet
+- Receives signed command requests from the Control Plane over a local or authenticated channel
+- Executes only the predefined actions above — no arbitrary command execution
+- Reports action result (success / failure / timeout) back to the Control Plane
+
+## 34.3 Safety Rules
+- No direct SSH or shell access from the Control Plane UI to any host
+- All command requests must be cryptographically signed; Ops Agent rejects unsigned requests
+- RBAC enforced: roles define which actions are permitted per user (e.g., read-only, operator, admin)
+- Destructive actions (cancel run, restart worker) require explicit confirmation before dispatch
+- Every action is audited: user identity, timestamp, action, target host/run, and outcome logged immutably
+
+---
+
+# 35. Multi-Site Deployment Strategy
+(See also: Section 13 Scheduling & Queues, Section 36 Site-Aware Scheduling, Section 32 Control Plane)
+
+The system is designed to operate across multiple geographic sites (target: 3–4 sites, 20+ servers total).
+
+## 35.1 Site Model
+- Each site is an **independent compute cell**: local workers, local artifact storage, local queues
+- A `site_id` is attached to every run, artifact, host record, and log entry
+- Sites operate autonomously — pipeline execution continues even if inter-site communication is interrupted
+- Control Plane provides global visibility across sites but is not required for local execution (see Section 32.7)
+
+## 35.2 Data Locality Rules
+- Prefer local execution: jobs run on the same site where their primary input artifacts are stored
+- Avoid cross-site transfer of large media artifacts during active pipeline runs
+- **Metadata and logs only** are replicated across sites (asynchronously)
+- Artifact content replication is explicit and opt-in (e.g., for backup or promotion to another site)
+
+## 35.3 External Provider Calls
+- HQ provider calls (see Section 22) may originate from any site that has network access and the required credentials
+- Outputs are stored at the originating site and linked in the global artifact registry
+
+## 35.4 Failure Isolation
+- A site going offline does not halt other sites
+- Runs pinned to an offline site are paused; they resume when the site recovers or are manually migrated
+- Cross-references to Section 17 failure rules apply at the site level as well
+
+---
+
+# 36. Site-Aware Scheduling & Storage Locality
+(Extends Section 13 Scheduling & Queues. See also: Section 35 Multi-Site Deployment, Section 14 Artifact Registry)
+
+## 36.1 Scheduling Rules
+- The orchestrator schedules each job to the site where the job's primary input artifacts are stored (locality-first)
+- Cross-site scheduling is allowed only when explicitly requested by an operator or when the origin site is unavailable
+- Worker pools are site-scoped: a cpu_queue worker on Site A only executes jobs enqueued for Site A
+
+## 36.2 Artifact Pinning
+- Large artifacts (video clips, audio, image packs) are pinned to their origin site
+- Artifact registry records `site_id` for every artifact; cross-site references are flagged
+- Promoting an artifact to another site is an explicit, audited operation
+
+## 36.3 Metadata Replication
+- Schema records, run summaries, cost logs, and lineage links are replicated globally (async, eventually consistent)
+- Job routing decisions use locally cached metadata; full sync is not required before dispatch
+
+## 36.4 Cache Locality
+- Asset caches (see Section 29.3) are local to each site
+- Cache misses on one site do not trigger cross-site fetches; the site resolves locally or falls back per Section 9 priority order
+- Cache population from a promoted artifact is an explicit step, not automatic
+
+---
+
+# 37. Host Health Model
+(See also: Section 16 Observability & Cost Tracking, Section 32 Control Plane, Section 33 Alerts & Notifications, Section 36 Site-Aware Scheduling)
+
+## 37.1 Per-Host Metrics
+Collected by the Ops Agent (see Section 34.2) and reported to the Control Plane:
+- CPU load (1-min and 5-min averages)
+- Memory usage (used / total)
+- Disk usage per volume (used / total; alert at configurable high-water mark)
+- Queue worker heartbeat (last heartbeat timestamp per worker)
+- Temperature (optional; surfaced as informational only)
+
+## 37.2 Per-Service Metrics
+- Heartbeat interval: each service emits a periodic liveness signal
+- Last successful job: timestamp of most recently completed job
+- Failure rate: rolling count of failed jobs over a configurable window
+
+## 37.3 Health States
+| State      | Meaning                                                              |
+|------------|----------------------------------------------------------------------|
+| `healthy`  | All metrics within normal thresholds; heartbeat current              |
+| `degraded` | One or more metrics outside normal range but service is still running|
+| `offline`  | Heartbeat missed beyond timeout threshold; assumed unreachable       |
+
+## 37.4 Usage
+- **Scheduling**: orchestrator avoids dispatching jobs to `degraded` or `offline` hosts (see Section 36)
+- **Alerts**: state transitions to `degraded` or `offline` trigger `host_down` alerts (see Section 33)
+- **Control Plane**: host health state displayed in real time in host drill-down view (see Section 32.6)
+
+---
+
 END OF DOCUMENT
