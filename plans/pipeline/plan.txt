@@ -380,7 +380,95 @@ Rule: If the component can be fed by “any client” via stable schema, it can 
 
 # 19. Development Phases (Milestones)
 
-Phase 1 – Deterministic preview pipeline end-to-end  
+## 19.0 Phase 0 — Minimal MVP (Local-Only Preview Pipeline, Schema-Compatible)
+
+### Goal
+Generate a 30–90 second episode end-to-end locally and produce a RenderOutput using preview_local.
+All outputs must validate against the schemas and contracts defined in Sections 5, 10–12, 14–16, and 21 (RenderPackage v1).
+No external AI providers are required or permitted in this phase.
+
+### In Scope
+
+**Artifacts (See Section 4 pipeline boundaries, Section 14 Artifact Registry)**
+- Produce the full artifact chain: Script → ShotList → AssetManifest → RenderPlan (profile: preview_local) → RenderOutput
+- Store every artifact in Artifact Registry format using local filesystem URIs (hash, schema_version, parent refs, creation params)
+- Run summary JSON written at completion (stage timings, cache hits, errors)
+
+**Canon (See Section 6)**
+- Canon stored as a local JSON snapshot per project
+- CanonDiff exists but is applied manually / via simple write (no auto-repair in MVP)
+- Canon Gate is minimal: detect only hard contradictions (name, age, death status, location) and block finalization if violated
+
+**Writing (See Section 7)**
+- Script generation via either: (A) local LLM, or (B) deterministic template generator
+- Output must conform to Script schema (Section 5.5) regardless of generation method
+
+**Film Adaptation (See Section 8)**
+- Script → ShotList adapter uses a small set of shot templates
+- Every shot must include a duration; adapter must produce a `timing_lock_hash`
+
+**Media Resolution (See Section 9)**
+- Asset resolution from local assets directory only; no external search; no generative fallback required
+- Placeholder assets used for any missing items — run must complete, not fail
+- Minimum metadata per asset: `license_type` defaults to "proprietary_cleared" for local assets; placeholders flagged explicitly
+
+**Audio**
+- Local TTS acceptable; no-voice mode permitted for MVP
+- Captions must be generated regardless of TTS availability
+- Optional: single local background music track with basic loudness ducking
+
+**Video (See Section 10.1)**
+- Deterministic ffmpeg render: slideshow / animatic format
+- Ken Burns-style motion on images is optional
+- Captions burned-in or exported as sidecar .srt — both acceptable
+
+**Orchestrator (See Section 13)**
+- Single CLI command drives sequential stage execution
+- Writes deterministic artifact folders; can resume from any completed checkpoint
+- No distributed queues required; simple sequential runner is sufficient
+
+### Out of Scope (Explicit)
+
+- External HQ providers — Section 22 (no external calls at all)
+- Multi-tenancy enforcement — Section 23 (single-tenant default only)
+- Webhooks / callbacks — Section 21 (stub placeholder acceptable)
+- Full rights gate blocking publish — Section 25.4 (local-only assumption applies; gate kept as stub)
+- Distributed queues — Section 13 (sequential runner replaces queue workers for MVP)
+- Advanced content safety scanning — Section 26 (basic text checks only; hooks must exist for later phases)
+
+### Acceptance Criteria (Testable)
+
+- [ ] One command produces: Script.json, ShotList.json, AssetManifest.json, RenderPlan.json, RenderOutput.json, final .mp4, captions file, and run_summary.json
+- [ ] Re-running the same command with the same inputs yields identical output content hashes (deterministic within local constraints)
+- [ ] Intentionally introducing a Canon contradiction causes Canon Gate to block finalization (no video produced)
+- [ ] Missing assets are replaced with placeholders and the run completes without failure
+- [ ] All generated artifacts are valid against their schemas and usable unchanged by Phase 1 and Phase 2 components
+
+### Parallel Workstreams (For Implementation Agents)
+
+**Workstream A — Orchestrator CLI + Artifact Folders**
+- Inputs: Project config JSON
+- Outputs: artifact directory layout, run_summary.json, resume checkpoints
+- Done when: CLI runs end-to-end sequentially, writes all artifact folders, resumes correctly from each checkpoint
+
+**Workstream B — Script → ShotList Adapter + Timing Lock**
+- Inputs: Script.json (Section 5.5)
+- Outputs: ShotList.json (Section 5.6) with durations + timing_lock_hash
+- Done when: adapter produces valid ShotList from any valid Script; timing_lock_hash is stable across reruns; schema validates
+
+**Workstream C — Preview Renderer + Captions**
+- Inputs: AssetManifest.json (Section 5.7), RenderPlan.json (Section 5.8, profile: preview_local)
+- Outputs: final .mp4, captions (.srt or burned-in), RenderOutput.json (Section 5.9)
+- Done when: ffmpeg render is deterministic; missing asset slots are filled with placeholders; captions are present; output hashes are stable
+
+**Workstream D — Minimal Canon Store + Minimal Gate**
+- Inputs: Canon JSON snapshot, proposed CanonDiff (Section 5.3)
+- Outputs: updated Canon snapshot or rejection error with contradiction details
+- Done when: gate correctly blocks hard contradictions (name/age/death/location); valid diffs are accepted; Canon snapshot round-trips cleanly
+
+---
+
+Phase 1 – Deterministic preview pipeline end-to-end
 - Script → ShotList → AssetManifest → preview_local render
 
 Phase 2 – Canon enforcement and continuity gates  
