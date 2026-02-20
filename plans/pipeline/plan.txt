@@ -1097,4 +1097,101 @@ Non-blocking changes (can merge independently):
 
 ---
 
+## Section 39 — YouTube Feedback Loop (OAuth + Comments → Next Episode)
+
+### 39.1 Goal
+
+- Read YouTube comments for a published episode via OAuth
+- Extract actionable suggestions
+- Feed them into next episode generation without breaking pipeline determinism
+
+### 39.2 Architecture Rule
+
+- OAuth + network access MUST NOT run inside deterministic pipeline stages
+- The pipeline may only consume local files/artifacts produced earlier (same principle as all other external I/O)
+
+### 39.3 New Repo: `feedback-ingest/`
+
+- **Role:** Feedback Ingestor (non-deterministic, networked, OAuth)
+- Sits entirely outside the deterministic pipeline
+- Writes a single output artifact to local disk: `FeedbackSnapshot.json`
+- Secrets (OAuth tokens) live only here; orchestrator never touches them
+
+### 39.4 New Artifact Schemas
+
+**FeedbackSnapshot.json** (raw, canonicalized, produced by `feedback-ingest/`):
+
+```json
+{
+  "schema_id": "FeedbackSnapshot",
+  "schema_version": "1.0.0",
+  "producer": { "repo": "feedback-ingest", "component": "YouTubeOAuthIngest" },
+  "source": {
+    "platform": "youtube",
+    "video_id": "<id>",
+    "channel_id": "<id>",
+    "fetched_at": "<RFC3339>"
+  },
+  "items": [
+    {
+      "comment_id": "<id>",
+      "author_hash": "sha256:<stable>",
+      "text": "<comment text>",
+      "like_count": 0,
+      "published_at": "<RFC3339>"
+    }
+  ]
+}
+```
+
+**FeedbackDigest.json** (deterministic, pipeline-safe, produced by `orchestrator/FeedbackCanon`):
+
+```json
+{
+  "schema_id": "FeedbackDigest",
+  "schema_version": "1.0.0",
+  "producer": { "repo": "orchestrator", "component": "FeedbackCanon" },
+  "video_id": "<id>",
+  "inputs_digest": "sha256:<canonical hash of normalized comments>",
+  "top_suggestions": [
+    {
+      "suggestion_id": "sug_0001",
+      "category": "pacing|clarity|plot|jokes|visuals|audio|other",
+      "summary": "<1 sentence>",
+      "evidence": [
+        { "comment_hash": "sha256:<...>", "quote": "<<=120 chars>" }
+      ],
+      "score": 0
+    }
+  ]
+}
+```
+
+### 39.5 Pipeline Integration (deferred — not Phase 0)
+
+- Orchestrator gains an OPTIONAL input: `FeedbackDigest.json`
+- When present: `Prompt + FeedbackDigest → Script → ShotList → ...`
+- Absence of FeedbackDigest has no effect on existing pipeline
+
+### 39.6 Wave Planning
+
+- **Wave 1** — `feedback-ingest/` MVP: OAuth flow + fetch comments + write FeedbackSnapshot.json
+- **Wave 2** — `FeedbackCanon` in orchestrator: snapshot → digest (sorting, hashing, stable scoring); unit tests pin exact JSON bytes for fixture snapshots
+- **Wave 3** — Writer uses FeedbackDigest: deterministic rules — only use `top_suggestions[].summary`, never `fetched_at`
+
+### 39.7 Determinism Constraints
+
+- Pipeline stages must never call YouTube APIs
+- FeedbackSnapshot may contain timestamps; FeedbackDigest must not
+- All lists sorted: score desc, then suggestion_id asc
+- Hashing uses canonical JSON (sorted keys, compact separators, UTF-8)
+
+### 39.8 Security
+
+- OAuth tokens stored only in user environment / local secret store
+- `feedback-ingest` reads tokens; orchestrator never touches secrets
+- Follows the secrets policy already defined in Section 24
+
+---
+
 END OF DOCUMENT
