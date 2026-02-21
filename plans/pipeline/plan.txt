@@ -1194,4 +1194,42 @@ Non-blocking changes (can merge independently):
 
 ---
 
+## Section 40 — Contract Governance v3.1 (Canonical in Orchestrator, Producer Ownership)
+
+- **Goal:** prevent contract drift + preserve determinism across repos without submodules or a separate contracts repo.
+- **Canonical location:** `orchestrator/` is the protocol distributor; canonical contracts live at:
+  ```
+  orchestrator/contracts/
+    schemas/
+    goldens/minimal/
+    goldens/e2e/
+    compat/protocol_version.json
+    tools/verify_contracts.py
+  ```
+- **Producer ownership:** each artifact's producing repo is the semantic authority (writing-agent Script, world-engine ShotList, orchestrator AssetManifest+RenderPlan, media AssetManifest.media, video RenderOutput).
+  Orchestrator hosts the canonical copy, but schema PRs must be approved by the producing repo owner.
+- **Protocol pinning:** every repo contains `PROTOCOL_VERSION` with:
+  ```
+  protocol="1.0.0"
+  contracts_commit="<orchestrator commit sha>"
+  ```
+  Meaning: repo validated against that exact snapshot.
+- **Distribution model:** other repos store a read-only snapshot under:
+  ```
+  third_party/contracts/
+  ```
+  Updated via a deterministic sync command (no manual copying).
+- **Verification:**
+  - Tier A (required, offline): schema validation of all goldens + canonical JSON formatting checks + determinism rules (no timestamps/random IDs/host paths in semantic contracts).
+  - Tier B (optional): e2e linkage checks using bundled fixtures only (no external file dependencies).
+- **Compatibility:** within the same major protocol version, consumers must accept earlier minor versions; breaking changes require schema_version bump.
+- **Change workflow:**
+  1. Producer proposes change → update `orchestrator/contracts` schemas + goldens → make `verify-contracts` passes → bump protocol version.
+  2. Repos sync snapshot → run local schema validation + determinism tests → bump `PROTOCOL_VERSION`.
+- **Non-goals:** no networking, no runtime deps, no pipeline behavior changes.
+
+Phase ordering: implement Contract Governance immediately after Phase 2 determinism gate is green; then run per-repo post-Phase-2 validation against pinned contracts.
+
+---
+
 END OF DOCUMENT
