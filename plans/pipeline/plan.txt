@@ -1232,4 +1232,131 @@ Phase ordering: implement Contract Governance immediately after Phase 2 determin
 
 ---
 
+## Section 41 — System Architecture: CLI Executable Model
+
+### 41.1 Mandate
+
+All repos must now support a deployable CLI executable.
+
+- No repo may assume Python import from another repo.
+- Communication happens ONLY through JSON files on disk.
+- No cross-repo imports. No hidden in-memory passing.
+- All artifacts must be written to disk.
+
+### 41.2 Deployment Model
+
+Each repo exposes a single stable CLI command:
+
+```
+writing-agent
+world-engine
+media
+video
+```
+
+The orchestrator invokes these via subprocess or shell script.
+
+### 41.3 Pipeline Contract (Strict File Flow)
+
+```
+01 StoryPrompt.json
+    ↓ writing-agent
+02 Script.json
+    ↓ world-engine
+03 ShotList.json
+    ↓ orchestrator stage3
+04 AssetManifest.json
+    ↓ media
+05 AssetManifest.media.json
+    ↓ orchestrator merge
+06 AssetManifest.final.json
+    ↓ orchestrator stage4
+07 RenderPlan.json
+    ↓ video
+08 RenderOutput.json + output.mp4 + output.srt
+```
+
+### 41.4 CLI Requirements (Mandatory)
+
+Each repo must:
+
+1. Accept explicit input file paths
+2. Accept explicit output file paths
+3. Validate output against `third_party/contracts` before writing
+4. Exit non-zero on contract failure
+5. Produce deterministic output
+
+Required CLI forms:
+
+```
+writing-agent generate \
+  --prompt StoryPrompt.json \
+  --out Script.json
+
+world-engine produce-shotlist \
+  --script Script.json \
+  --out ShotList.json
+
+media resolve \
+  --in AssetManifest.json \
+  --out AssetManifest.media.json
+
+video render \
+  --manifest AssetManifest.final.json \
+  --plan RenderPlan.json \
+  --out RenderOutput.json \
+  --video output.mp4
+```
+
+### 41.5 Orchestrator Role
+
+The orchestrator does NOT import other repos.
+It creates a run directory and invokes binaries in sequence.
+
+```
+orchestrator run --project project.json
+```
+
+Internally it may delegate to:
+
+```
+bash pipeline.sh
+```
+
+### 41.6 Run Directory Structure
+
+```
+runs/<episode_id>/
+  01_storyprompt.json
+  02_script.json
+  03_shotlist.json
+  04_assetmanifest.json
+  05_assetmanifest.media.json
+  06_assetmanifest.final.json
+  07_renderplan.json
+  08_renderoutput.json
+  output.mp4
+  output.srt
+```
+
+### 41.7 Constraints
+
+- No renaming artifacts without a schema version bump (see Section 30)
+- No hidden transformations between stages
+- No memory-only merge steps
+- Every stage writes its output file before the next stage is invoked
+- Every stage validates against the pinned contract snapshot in `third_party/contracts` (see Section 40)
+
+### 41.8 Next Action Per Repo
+
+| Repo            | Required Action                                              |
+|-----------------|--------------------------------------------------------------|
+| `writing-agent` | Ensure CLI exists and works standalone                       |
+| `world-engine`  | Ensure CLI exists and works standalone                       |
+| `media`         | Ensure contract validation happens before write              |
+| `video`         | Ensure deterministic output; provide `--help` documentation  |
+| all repos       | No further architectural redesign; implement this model only |
+
+---
+
 END OF DOCUMENT
