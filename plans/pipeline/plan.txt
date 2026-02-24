@@ -1359,4 +1359,89 @@ runs/<episode_id>/
 
 ---
 
+# 42. Human-First Narrative System
+
+This section governs the interface between human-authored story content and the automated pipeline. The principle is that human intent must be validated and confirmed before any automated compilation begins.
+
+---
+
+## 42.1 Early Logic Validation Architecture
+
+------------------------------------------------------------
+EARLY LOGIC VALIDATION ARCHITECTURE
+------------------------------------------------------------
+
+Principle:
+User story drafts must be validated against canon and logical consistency
+BEFORE internal JSON compilation occurs.
+
+JSON artifacts are compilation outputs, not validation inputs.
+
+------------------------------------------------------------
+CORRECT WORKFLOW (Early Failure Model)
+------------------------------------------------------------
+
+User Story Text
+→ writing-agent (structure + scene segmentation only)
+→ world-engine validate-story-draft
+    - Checks against CanonSnapshot
+    - Validates character states
+    - Detects contradictions
+    - Returns CanonViolationReport.json if invalid
+→ If validation fails:
+    - Surface errors to user immediately
+    - Stop pipeline
+→ If validation passes:
+    - writing-agent compiles StoryPrompt.json
+    - Continue to Script.json generation
+
+------------------------------------------------------------
+RESPONSIBILITY CLARIFICATION
+------------------------------------------------------------
+
+writing-agent:
+- Generates and polishes human-readable story text
+- Structures story into scenes
+- Calls world-engine for validation
+- Does NOT persist story history
+- Does NOT store canon state
+- Only generates StoryPrompt.json after validation passes
+
+world-engine:
+- Persists CanonSnapshot per project
+- Maintains narrative memory
+- Validates story drafts before compilation
+- Emits CanonViolationReport.json on failure
+- Does NOT call OpenAI
+- Does NOT modify story content
+
+orchestrator:
+- Coordinates validation sequence
+- Ensures validation occurs before StoryPrompt compilation
+- Stops pipeline on logic failure
+
+------------------------------------------------------------
+CANON STATE MANAGEMENT
+------------------------------------------------------------
+
+Each project maintains isolated narrative state:
+
+- CanonSnapshot.json
+- Episode history
+- Character states
+
+Multiple projects run in parallel with isolated canon memory.
+
+------------------------------------------------------------
+ERROR DETECTION POLICY
+------------------------------------------------------------
+
+All narrative contradictions must be caught at the earliest possible stage.
+
+No JSON artifact should be generated if the story draft violates canon.
+
+------------------------------------------------------------
+
+---
+
 END OF DOCUMENT
